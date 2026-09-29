@@ -1,0 +1,12 @@
+**/*.gba
+**/*.sav
+**/*.ss[0-9]
+**/*.cheats
+
+/RomPatcher.js
+
+.venv/
+__pycache__/
+*.pyc
+
+.DS_Store
