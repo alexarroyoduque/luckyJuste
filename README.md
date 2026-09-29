@@ -115,8 +115,7 @@ Because these are additional independent attempts rather than a simple percentag
 ```
 
 ## Credits
-AlexArroyoDuque
-
+- AlexArroyoDuque
 - [Marc Robledo, RomPatcher](https://github.com/marcrobledo/RomPatcher.js)
 - [LagoLunatic, DSVania Edit creator](https://www.romhacking.net/community/4318)
 - [RomHacking](https://www.romhacking.net)
