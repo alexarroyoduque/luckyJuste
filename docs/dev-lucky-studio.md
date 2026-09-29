@@ -1,10 +1,10 @@
-# Estudio técnico del sistema de drops y del Rare Ring en Castlevania: Harmony of Dissonance (GBA)
+# Estudio técnico del sistema de drops, LCK y Rare Ring en Castlevania: Harmony of Dissonance (GBA)
 
 Este documento recopila el análisis realizado mediante **DSVania Editor**, desensamblado THUMB y depuración con **GDB/mGBA** sobre el sistema de caída de objetos (*drops*) de *Castlevania: Harmony of Dissonance* (USA).
 
-El objetivo es documentar qué datos intervienen en una tirada de drop, en qué orden se evalúan los dos objetos de un enemigo y cuál es el comportamiento real del **Rare Ring** en la ROM original.
+El objetivo principal es documentar qué datos intervienen en una tirada de drop, en qué orden se evalúan los dos objetos de un enemigo, qué papel desempeña LCK en esta rutina y cuál es el comportamiento real del **Rare Ring** en la ROM original.
 
-> **Alcance:** las conclusiones sobre direcciones, registros y bonus del Rare Ring se apoyan en el desensamblado y en las pruebas GDB recogidas durante el estudio. Las probabilidades porcentuales se derivan del espacio RNG de 1024 valores observado en estas rutinas.
+> **Alcance:** las conclusiones sobre la rutina de drops, direcciones, registros y bonus del Rare Ring se apoyan en el desensamblado y en las pruebas GDB recogidas durante el estudio. Las probabilidades porcentuales se derivan del espacio RNG de 1024 valores observado en estas rutinas. Las referencias al Rare Ghost se consideran contexto externo y no forman parte de la validación GDB de este documento.
 
 ---
 
@@ -539,9 +539,9 @@ Esto es más preciso que modificar indiscriminadamente `r6` y `r0` desde un watc
 
 ---
 
-## 14. Relación con el parche de LCK
+## 14. Relación con el parche luckyJuste
 
-El estudio vanilla establece una referencia importante para cualquier modificación posterior del sistema:
+El estudio de la ROM original establece la referencia contra la que se compara el parche:
 
 ```text
 Rare Ring original:
@@ -549,21 +549,91 @@ Drop 2 (raro)   -> +16 al umbral
 Drop 1 (normal) -> +32 al umbral
 ```
 
-Si un parche elimina la comprobación específica del Rare Ring y convierte el accesorio en `+16 LCK`, aplicando después esa LCK adicional por igual a ambos drops, el resultado pasa a ser:
+El diseño actual de **luckyJuste** elimina esta comprobación especial del Rare Ring y hace que la LCK adicional del equipamiento afecte a ambos drops.
+
+La fórmula implementada es:
 
 ```text
-Parche con +16 LCK:
-Drop 2 (raro)   -> +16
-Drop 1 (normal) -> +16
+EXTRA_LCK  = LCK_ATTR - level - 24
+EXTRA_DROP = EXTRA_LCK + (EXTRA_LCK >> 2)
 ```
 
-Por tanto, ese diseño:
+La segunda operación equivale a:
 
-- conserva el efecto numérico vanilla del Rare Ring sobre Drop 2;
-- reduce el efecto vanilla sobre Drop 1 de `+32` a `+16`;
-- hace que el sistema dependa de una regla general de LCK en lugar de una excepción específica para el Rare Ring.
+```text
+EXTRA_DROP = EXTRA_LCK + floor(EXTRA_LCK / 4)
+```
 
-Esto no es necesariamente un error: es una **decisión de balance del parche**. Debe documentarse como una diferencia deliberada respecto a la ROM original.
+es decir, aproximadamente un multiplicador ×1,25 con truncado entero.
+
+El Rare Ring se modifica para otorgar:
+
+```text
++24 LCK
+```
+
+Por tanto:
+
+```text
+EXTRA_LCK  = 24
+EXTRA_DROP = 24 + (24 >> 2)
+           = 24 + 6
+           = 30
+```
+
+El resultado del parche es:
+
+```text
+Rare Ring con luckyJuste:
+Drop 2 (raro)   -> +30 al umbral
+Drop 1 (normal) -> +30 al umbral
+```
+
+Comparación:
+
+| Sistema | Drop 2 — raro | Drop 1 — normal |
+|---|---:|---:|
+| ROM original + Rare Ring | +16 | +32 |
+| luckyJuste + Rare Ring (+24 LCK) | **+30** | **+30** |
+
+Este diseño sustituye una excepción específica del Rare Ring por una regla general basada en la LCK del equipamiento. Respecto a vanilla, aumenta el efecto del anillo sobre Drop 2 (`+16 -> +30`) y lo reduce ligeramente sobre Drop 1 (`+32 -> +30`).
+
+### 14.1 Validación GDB del parche actual
+
+El parche con Rare Ring `+24 LCK` y multiplicador ×1,25 truncado se validó dinámicamente usando Armor Knight.
+
+Para Drop 2:
+
+```text
+r6 inicial = 8
+EXTRA_LCK  = 24
+24 >> 2    = 6
+EXTRA_DROP = 30
+r6 final   = 38
+```
+
+Para Drop 1:
+
+```text
+r6 inicial = 16
+EXTRA_LCK  = 24
+24 >> 2    = 6
+EXTRA_DROP = 30
+r6 final   = 46
+```
+
+Por tanto, las dos ramas ejecutan correctamente la fórmula prevista.
+
+### 14.2 LCK y Rare Ghost
+
+La rutina del Rare Ghost **no se modifica directamente** por luckyJuste. Sin embargo, el Rare Ring ahora aumenta la estadística LCK real de Juste en `+24`, por lo que puede influir indirectamente en cualquier mecánica vanilla que consulte esa estadística.
+
+- Castlevania Wiki — *In-Game Formula*:
+  https://castlevania.fandom.com/wiki/In-Game_Formula
+- Kraleck — *Luck Stat PSA*, Steam Community (2021):
+  https://steamcommunity.com/app/1552550/discussions/0/3155328042348232208/
+
+Fuentes públicas históricas documentan que la probabilidad de aparición del Rare Ghost depende de LCK y que incluso con valores extremos de LCK su frecuencia observada permanece limitada. Esta parte debe distinguirse del análisis de drops anterior: la rutina del Rare Ghost no ha sido desensamblada ni validada con GDB dentro de este estudio.
 
 ---
 
@@ -581,5 +651,8 @@ El análisis permite establecer los siguientes hechos para la ROM estudiada:
 8. El bonus se construye temporalmente en `r0`; `r6` conserva el umbral base.
 9. Las pruebas GDB (`8 -> 24` y `16 -> 48`) confirman dinámicamente lo observado en el desensamblado.
 10. Debido a la prioridad de Drop 2, la probabilidad efectiva por muerte de Drop 1 está condicionada al fallo de Drop 2.
+11. En la rutina vanilla de drops analizada no se observa una lectura de la LCK de Juste; el modificador específico observado es la comprobación del Rare Ring.
+12. El parche luckyJuste sustituye esa excepción por un sistema general basado en la LCK adicional del equipamiento.
+13. La versión actual del parche usa Rare Ring `+24 LCK` y un multiplicador ×1,25 truncado, produciendo `+30` de umbral en ambas ramas; este comportamiento también fue validado con GDB.
 
-Estas observaciones proporcionan una base reproducible para estudiar o modificar posteriormente la relación entre **LCK**, equipamiento y probabilidades de drop.
+Estas observaciones proporcionan una base reproducible para distinguir con claridad el comportamiento **vanilla** del nuevo sistema introducido por **luckyJuste**.
