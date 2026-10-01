@@ -564,7 +564,7 @@
     "name": "Disc Armor",
     "drop": {
       "common": {
-        "HEX": "00",
+        "HEX": "20",
         "item": "Iron Boots"
       },
       "rare": {
