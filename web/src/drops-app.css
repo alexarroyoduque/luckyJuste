@@ -1,0 +1,322 @@
+:host {
+  display: block;
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h1 {
+  font-family: 'Pirata One', cursive;
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  margin-bottom: 1rem;
+}
+
+.page-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.page-header h1 {
+  margin-bottom: 0;
+}
+
+.credit {
+  font-size: 0.85rem;
+  color: #555;
+  white-space: nowrap;
+}
+
+.credit a {
+  color: #1a4c85;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+input[type='search'] {
+  width: 240px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.separator {
+  width: 1px;
+  align-self: stretch;
+  background: #ccc;
+}
+
+.filter-group {
+  display: flex;
+  flex: 0 0 300px;
+  width: 300px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #e9e9e9;
+  border-radius: 0.4rem;
+  box-sizing: border-box;
+}
+
+.lucky-juste-group {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: #fff6d5;
+  border-radius: 0.4rem;
+  box-sizing: border-box;
+}
+
+.lucky-juste-title {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.info-button {
+  border: 1px solid #b8860b;
+  background: #fff;
+  color: #7a5b00;
+  border-radius: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.rare-ghost-button {
+  border: 1px solid #2f6fb8;
+  background: #fff;
+  color: #1a4c85;
+  border-radius: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.info-panel {
+  width: 100%;
+  box-sizing: border-box;
+  margin: -0.5rem 0 1rem;
+  padding: 0.75rem 1rem;
+  background: #fffbe6;
+  border: 1px solid #f0d878;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+.rare-ghost-panel {
+  width: 100%;
+  box-sizing: border-box;
+  margin: -0.5rem 0 1rem;
+  padding: 0.75rem 1rem;
+  background: #e6f0fa;
+  border: 1px solid #a9c8e8;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+.rare-ghost-title {
+  font-weight: 600;
+  color: #1a4c85;
+  margin-bottom: 0.5rem;
+}
+
+.rare-ghost-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.rare-ghost-panel ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.formulas {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.formula {
+  font-size: 0.85rem;
+  color: #555;
+  white-space: nowrap;
+}
+
+.lucky-box {
+  width: 3.7rem;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.lucky-box[readonly] {
+  background: #eee;
+  color: #333;
+}
+
+.rare-ring-label {
+  color: #7b2fbe;
+}
+
+.rare-ring-label input[type='checkbox'] {
+  accent-color: #7b2fbe;
+}
+
+td.rare-ring-active {
+  color: #7b2fbe;
+}
+
+.delta {
+  margin-left: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.delta.positive {
+  color: #1a7a1a;
+}
+
+.delta.negative {
+  color: #b00020;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+}
+
+th,
+td {
+  border: 1px solid #ccc;
+  padding: 0.2rem 0.3rem;
+}
+
+td {
+  font-family: 'Roboto Mono', monospace;
+  text-align: right;
+}
+
+td:nth-child(2),
+td:nth-child(3),
+td:nth-child(4) {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+td:nth-child(2) a {
+  color: inherit;
+  text-decoration: underline dotted;
+}
+
+.rate-value {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.rate-percent {
+  white-space: nowrap;
+}
+
+.rate-fraction {
+  color: #666;
+  font-size: 0.75em;
+  white-space: nowrap;
+}
+
+.rate-fraction span.rare-ring-active {
+  color: #7b2fbe;
+}
+
+td:nth-child(2),
+td:nth-child(3),
+td:nth-child(4) {
+  text-align: left;
+}
+
+td:nth-child(2) {
+  max-width: 6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+td:nth-child(3) {
+  max-width: 6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+td:nth-child(4) {
+  max-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+thead th {
+  background: #222;
+  color: #fff;
+  position: sticky;
+  top: 0;
+}
+
+thead th.gold {
+  background: #b8860b;
+  color: #fff;
+}
+
+tbody td {
+  background: #f0f0f0;
+}
+
+tbody td.gold {
+  background: #fff6d5;
+}
+
+th:nth-child(1),
+td:nth-child(1) {
+  width: 0.8rem;
+}
+
+th:nth-child(5),
+td:nth-child(5) {
+  width: 6.8rem;
+}
+
+th:nth-child(7),
+td:nth-child(7) {
+  width: 6.8rem;
+}

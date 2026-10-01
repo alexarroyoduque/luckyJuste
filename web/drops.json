@@ -1,0 +1,1237 @@
+[
+  {
+    "name": "Bat",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$1"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Tiny Slime",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$1"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Slime",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "Anti-Venom"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Sturdy Turban"
+      }
+    }
+  },
+  {
+    "name": "Medusa Head",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Pendant"
+      }
+    }
+  },
+  {
+    "name": "Zombie",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Casual Wear"
+      }
+    }
+  },
+  {
+    "name": "Skeleton",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$5"
+      },
+      "rare": {
+        "HEX": "10",
+        "item": "$25"
+      }
+    }
+  },
+  {
+    "name": "Fleaman",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$1"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "$5"
+      }
+    }
+  },
+  {
+    "name": "Bone Soldier",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Rubber Armor"
+      }
+    }
+  },
+  {
+    "name": "Armor Knight",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Field Armor"
+      }
+    }
+  },
+  {
+    "name": "Giant Bat",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Ghost",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Bone Pillar",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$1"
+      },
+      "rare": {
+        "HEX": "10",
+        "item": "$5"
+      }
+    }
+  },
+  {
+    "name": "Large Ghost",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$5"
+      },
+      "rare": {
+        "HEX": "10"
+      }
+    }
+  },
+  {
+    "name": "White Dragon",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$5"
+      },
+      "rare": {
+        "HEX": "10",
+        "item": "$25"
+      }
+    }
+  },
+  {
+    "name": "Rock Armor",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Plain Circlet"
+      }
+    }
+  },
+  {
+    "name": "White Dragon Lv2",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "Potion"
+      },
+      "rare": {
+        "HEX": "10",
+        "item": "$100"
+      }
+    }
+  },
+  {
+    "name": "Lizard Man",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Plate Coat"
+      }
+    }
+  },
+  {
+    "name": "Living Armor",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Ectoplasm",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "Uncurse Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Thin Robe"
+      }
+    }
+  },
+  {
+    "name": "Skeleton Blaze",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$25"
+      },
+      "rare": {
+        "HEX": "10",
+        "item": "Potion"
+      }
+    }
+  },
+  {
+    "name": "Big Skeleton",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$25"
+      },
+      "rare": {
+        "HEX": "10",
+        "item": "Opal"
+      }
+    }
+  },
+  {
+    "name": "Flying Bone",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "$5"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Crimson Cloak"
+      }
+    }
+  },
+  {
+    "name": "Peeping Eye",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "Potion"
+      },
+      "rare": {
+        "HEX": "10",
+        "item": "Shin Guards"
+      }
+    }
+  },
+  {
+    "name": "Skeleton Flail",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$25"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Cloth Helmet"
+      }
+    }
+  },
+  {
+    "name": "Skeleton Spear",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$25"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Leather Helmet"
+      }
+    }
+  },
+  {
+    "name": "Red Skeleton",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Skeleton Rib",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "Uncurse Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Bronze Armor"
+      }
+    }
+  },
+  {
+    "name": "Bone Thrower",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "Anti-Venom"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Bronze Boots"
+      }
+    }
+  },
+  {
+    "name": "Skeleton Ape",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$25"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Rock Leather"
+      }
+    }
+  },
+  {
+    "name": "Gate Guarder",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Golem",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Skull Knight",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Tiny Devil",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "Uncurse Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Turquoise (High Potion)"
+      }
+    }
+  },
+  {
+    "name": "Scarecrow",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$5"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Gauntlets"
+      }
+    }
+  },
+  {
+    "name": "Skeleton Spider",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Bicocette"
+      }
+    }
+  },
+  {
+    "name": "Man−eater",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Mirror Pendant (Turquoise)"
+      }
+    }
+  },
+  {
+    "name": "Axe Armor",
+    "drop": {
+      "common": {
+        "HEX": "08",
+        "item": "Iron Boots"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Bangle"
+      }
+    }
+  },
+  {
+    "name": "Witch",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "Anti-Venom"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Loose Clothing"
+      }
+    }
+  },
+  {
+    "name": "Siren",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Mana Prism"
+      }
+    }
+  },
+  {
+    "name": "Bomber Armor",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "$5"
+      },
+      "rare": {
+        "HEX": "10",
+        "item": "$25"
+      }
+    }
+  },
+  {
+    "name": "Minotaur",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Balloon",
+    "drop": {
+      "common": {
+        "HEX": "40"
+      },
+      "rare": {
+        "HEX": "10",
+        "item": "Mana Prism"
+      }
+    }
+  },
+  {
+    "name": "Big Balloon",
+    "drop": {
+      "common": {
+        "HEX": "40"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Cuirass Armor"
+      }
+    }
+  },
+  {
+    "name": "Bone Archer",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "$100"
+      }
+    }
+  },
+  {
+    "name": "Ruler Sword",
+    "drop": {
+      "common": {
+        "HEX": "08",
+        "item": "$25"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Puff Coat"
+      }
+    }
+  },
+  {
+    "name": "Disc Armor",
+    "drop": {
+      "common": {
+        "HEX": "00",
+        "item": "Iron Boots"
+      },
+      "rare": {
+        "HEX": "00",
+        "item": "Bandana"
+      }
+    }
+  },
+  {
+    "name": "Devil",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Merman",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "Anti-Venom"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "$25"
+      }
+    }
+  },
+  {
+    "name": "Fishman",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "Anti-Venom"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Parade Armor"
+      }
+    }
+  },
+  {
+    "name": "Arabaki",
+    "drop": {
+      "common": {
+        "HEX": "40"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Uncurse Potion"
+      }
+    }
+  },
+  {
+    "name": "Ruler Sword Lv2",
+    "drop": {
+      "common": {
+        "HEX": "08",
+        "item": "$100"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Chain Mail"
+      }
+    }
+  },
+  {
+    "name": "Feather Demon",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Lure Key"
+      }
+    }
+  },
+  {
+    "name": "Guardian Armor",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Boomerang Armor",
+    "drop": {
+      "common": {
+        "HEX": "00",
+        "item": "$25"
+      },
+      "rare": {
+        "HEX": "00",
+        "item": "$100"
+      }
+    }
+  },
+  {
+    "name": "Giant Merman",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Max Slimer",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Fleaman Armor",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$25"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Potion"
+      }
+    }
+  },
+  {
+    "name": "Gold Medusa",
+    "drop": {
+      "common": {
+        "HEX": "00",
+        "item": "$400"
+      },
+      "rare": {
+        "HEX": "08"
+      }
+    }
+  },
+  {
+    "name": "Mimic",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "High Potion"
+      },
+      "rare": {
+        "HEX": "10",
+        "item": "Brigandine"
+      }
+    }
+  },
+  {
+    "name": "White Dragon Lv3",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "$25"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Lapis Lazuli"
+      }
+    }
+  },
+  {
+    "name": "Skeleton Mirror",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$25"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Lapis Lazuli"
+      }
+    }
+  },
+  {
+    "name": "O",
+    "drop": {
+      "common": {
+        "HEX": "20"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Silk Cape"
+      }
+    }
+  },
+  {
+    "name": "Harpy",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "Uncurse Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Greaves"
+      }
+    }
+  },
+  {
+    "name": "Axe Armor Lv2",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "Ancient Armor"
+      },
+      "rare": {
+        "HEX": "10"
+      }
+    }
+  },
+  {
+    "name": "Specter",
+    "drop": {
+      "common": {
+        "HEX": "08",
+        "item": "$5"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Uncurse Potion"
+      }
+    }
+  },
+  {
+    "name": "Bronze Guarder",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Peeping Big",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Legion (saint)",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Shadow",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Melty Zombie",
+    "drop": {
+      "common": {
+        "HEX": "40"
+      },
+      "rare": {
+        "HEX": "08"
+      }
+    }
+  },
+  {
+    "name": "Bone Liquid",
+    "drop": {
+      "common": {
+        "HEX": "40"
+      },
+      "rare": {
+        "HEX": "08"
+      }
+    }
+  },
+  {
+    "name": "Ruler Sword Lv3",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "$250"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Shield Pendant"
+      }
+    }
+  },
+  {
+    "name": "Poison Lizard",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "Anti-Venom"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Heavy Armor"
+      }
+    }
+  },
+  {
+    "name": "Pazuzu",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Spriggan",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "Hint Card 1"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "$1000"
+      }
+    }
+  },
+  {
+    "name": "Gorgon",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "$100"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Double Mail"
+      }
+    }
+  },
+  {
+    "name": "Blaze Master",
+    "drop": {
+      "common": {
+        "HEX": "08",
+        "item": "$25"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Velvet Ribbon"
+      }
+    }
+  },
+  {
+    "name": "Arthro Skeleton",
+    "drop": {
+      "common": {
+        "HEX": "20",
+        "item": "$100"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Potion"
+      }
+    }
+  },
+  {
+    "name": "Rare Ghost",
+    "drop": {
+      "common": {
+        "HEX": "6c"
+      },
+      "rare": {
+        "HEX": "6c"
+      }
+    }
+  },
+  {
+    "name": "Skeleton Glass",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "Uncurse Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "$100"
+      }
+    }
+  },
+  {
+    "name": "Victory Armor",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "High Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Healing Mail"
+      }
+    }
+  },
+  {
+    "name": "Hammer−Hammer",
+    "drop": {
+      "common": {
+        "HEX": "20"
+      },
+      "rare": {
+        "HEX": "08"
+      }
+    }
+  },
+  {
+    "name": "Disc Armor Lv2",
+    "drop": {
+      "common": {
+        "HEX": "10",
+        "item": "Potion"
+      },
+      "rare": {
+        "HEX": "10",
+        "item": "Squires Armor"
+      }
+    }
+  },
+  {
+    "name": "Minotaur Lv2",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Legion (corpse)",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Talos",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Death",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Death",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Pixie",
+    "drop": {
+      "common": {
+        "HEX": "08",
+        "item": "High Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Heart Choker"
+      }
+    }
+  },
+  {
+    "name": "Sylph",
+    "drop": {
+      "common": {
+        "HEX": "08",
+        "item": "High Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Heart Choker"
+      }
+    }
+  },
+  {
+    "name": "Master Lizard",
+    "drop": {
+      "common": {
+        "HEX": "40",
+        "item": "High Potion"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Battle Armor"
+      }
+    }
+  },
+  {
+    "name": "Owl",
+    "drop": {
+      "common": {
+        "HEX": "80",
+        "item": "$5"
+      },
+      "rare": {
+        "HEX": "20",
+        "item": "$25"
+      }
+    }
+  },
+  {
+    "name": "Clear Bone",
+    "drop": {
+      "common": {
+        "HEX": "80",
+        "item": "$100"
+      },
+      "rare": {
+        "HEX": "08",
+        "item": "Leather Greaves"
+      }
+    }
+  },
+  {
+    "name": "Jp Bonepillar",
+    "drop": {
+      "common": {
+        "HEX": "80",
+        "item": "$5"
+      },
+      "rare": {
+        "HEX": "20",
+        "item": "$25"
+      }
+    }
+  },
+  {
+    "name": "Simon Wraith",
+    "drop": {
+      "common": {
+        "HEX": "80"
+      },
+      "rare": {
+        "HEX": "08"
+      }
+    }
+  },
+  {
+    "name": "Pike Master",
+    "drop": {
+      "common": {
+        "HEX": "08"
+      },
+      "rare": {
+        "HEX": "08"
+      }
+    }
+  },
+  {
+    "name": "Cyclops",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Maxim",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Dracula Wraith",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Dracula Wraith Ω",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  },
+  {
+    "name": "Revenge Armor",
+    "drop": {
+      "common": {
+        "HEX": "00"
+      },
+      "rare": {
+        "HEX": "00"
+      }
+    }
+  }
+]

@@ -6,6 +6,8 @@ In the original game, **LCK has no effect on enemy item drop rates**. Equipping 
 
 **luckyJuste fixes this by making LCK gained from equipment increase the drop rate of both normal and rare items**, while excluding the LCK Juste naturally gains from leveling.
 
+[Drop calculator](https://harmony-of-dissonance-drop.web.app/).
+
 ## How to apply
 
 1. Get a clean USA ROM of *Castlevania: Harmony of Dissonance*.
