@@ -15,7 +15,7 @@ A web-based drop rate calculator for Castlevania: Harmony of Dissonance, enhance
 
 ### Prerequisites
 
-- Node.js 18.17.1 or later
+- Node.js 20
 - npm
 
 ### Install Dependencies

@@ -3,7 +3,7 @@ export const DROP_BASE = 1024;
 export const RARE_RING_COMMON_BONUS = 32;
 export const RARE_RING_RARE_BONUS = 16;
 // Multiplicador del parche luckyJuste: EXTRA_DROP = floor(EQUIPMENT_LUCK * RATIO)
-export const DEFAULT_RATIO = 1.25;
+export const DEFAULT_RATIO = 1.20;
 // Probabilidad de cada tirada para la aparición de Rare Ghost y el tope efectivo del juego
 export const RARE_GHOST_ROLL_CHANCE = 1 / 64;
 export const RARE_GHOST_MAX_CHANCE = 0.25;

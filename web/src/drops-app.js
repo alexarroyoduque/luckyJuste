@@ -116,7 +116,7 @@ export class DropsApp extends LitElement {
           </label>
           <label>
             ratio
-            <input class="lucky-box" type="number" value=${DEFAULT_RATIO} readonly />
+            <input class="lucky-box ratio" type="number" value=${DEFAULT_RATIO} readonly />
           </label>
           <label>
             EQUIPMENT_LUCK
@@ -188,6 +188,7 @@ export class DropsApp extends LitElement {
           </label>
         </div>
         <ul>
+          <li>At level 1, Juste has 25 Luck and gains 1 Luck per level (up to 89).</li>
           <li>LUCK 0–79: 1/64 ≈ 1.56% appearance chance.</li>
           <li>From 80 LUCK onward, every +10 LUCK adds another 1/64 roll.</li>
           <li>Examples: 80 LUCK → 3.10%, 90 → 4.61%, 100 → 6.11%.</li>

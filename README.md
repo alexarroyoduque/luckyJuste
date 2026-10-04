@@ -16,7 +16,7 @@ In the original game, **LCK has no effect on enemy item drop rates**. Equipping 
 
 Compatible ROM:
 
-```text id="76zgsd"
+```text
 Castlevania - Harmony of Dissonance (USA)
 SHA-1: B90DA0D9BE0B3A0893CD9E2C399056BCF9579E21
 ```
@@ -29,23 +29,28 @@ With luckyJuste, **LCK gained from equipment increases both normal and rare item
 
 Juste's natural LCK from leveling is excluded:
 
-```text id="mxshq5"
+```text
 EXTRA_LCK = LCK_ATTR - level - 24
 ```
 
-Luck equipment receives a **1.25× scaling bonus with integer truncation**:
+Luck equipment receives an efficient approximation of a **1.20× scaling bonus** using integer arithmetic:
 
-```text id="0ekknq"
-EXTRA_DROP = EXTRA_LCK + floor(EXTRA_LCK / 4)
+```text
+EXTRA_DROP = EXTRA_LCK
+           + floor(EXTRA_LCK / 8)
+           + floor(EXTRA_LCK / 16)
+           + floor(EXTRA_LCK / 64)
 ```
+
+The nominal binary factor is `1.203125×`. Each division is truncated independently.
 
 The final drop check becomes:
 
-```text id="l48pqq"
+```text
 RNG < BASE_DROP_RATE + EXTRA_DROP
 ```
 
-The game uses an RNG range of `0–1023` and, as in the original game, checks the rare item first. If it drops, the normal item is not evaluated.
+The game uses an RNG range of `0–1023`, so each point added to the drop threshold represents `1/1024` of the probability space. As in the original game, the rare item is checked first. If it drops, the normal item is not evaluated.
 
 ### Rare Ring
 
@@ -53,8 +58,8 @@ The **Rare Ring now grants +24 LCK**, visible in Juste's stats.
 
 With the patch formula:
 
-```text id="ajlvjn"
-24 LCK -> +30 drop threshold
+```text
+24 LCK -> 24 + 3 + 1 + 0 = +28 drop threshold
 ```
 
 This bonus applies to both normal and rare items, replacing the original hidden Rare Ring behavior with the global LCK system.

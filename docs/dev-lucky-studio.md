@@ -539,120 +539,20 @@ Esto es más preciso que modificar indiscriminadamente `r6` y `r0` desde un watc
 
 ---
 
-## 14. Relación con el parche luckyJuste
+## 14. Conclusiones
 
-El estudio de la ROM original establece la referencia contra la que se compara el parche:
-
-```text
-Rare Ring original:
-Drop 2 (raro)   -> +16 al umbral
-Drop 1 (normal) -> +32 al umbral
-```
-
-El diseño actual de **luckyJuste** elimina esta comprobación especial del Rare Ring y hace que la LCK adicional del equipamiento afecte a ambos drops.
-
-La fórmula implementada es:
-
-```text
-EXTRA_LCK  = LCK_ATTR - level - 24
-EXTRA_DROP = EXTRA_LCK + (EXTRA_LCK >> 2)
-```
-
-La segunda operación equivale a:
-
-```text
-EXTRA_DROP = EXTRA_LCK + floor(EXTRA_LCK / 4)
-```
-
-es decir, aproximadamente un multiplicador ×1,25 con truncado entero.
-
-El Rare Ring se modifica para otorgar:
-
-```text
-+24 LCK
-```
-
-Por tanto:
-
-```text
-EXTRA_LCK  = 24
-EXTRA_DROP = 24 + (24 >> 2)
-           = 24 + 6
-           = 30
-```
-
-El resultado del parche es:
-
-```text
-Rare Ring con luckyJuste:
-Drop 2 (raro)   -> +30 al umbral
-Drop 1 (normal) -> +30 al umbral
-```
-
-Comparación:
-
-| Sistema | Drop 2 — raro | Drop 1 — normal |
-|---|---:|---:|
-| ROM original + Rare Ring | +16 | +32 |
-| luckyJuste + Rare Ring (+24 LCK) | **+30** | **+30** |
-
-Este diseño sustituye una excepción específica del Rare Ring por una regla general basada en la LCK del equipamiento. Respecto a vanilla, aumenta el efecto del anillo sobre Drop 2 (`+16 -> +30`) y lo reduce ligeramente sobre Drop 1 (`+32 -> +30`).
-
-### 14.1 Validación GDB del parche actual
-
-El parche con Rare Ring `+24 LCK` y multiplicador ×1,25 truncado se validó dinámicamente usando Armor Knight.
-
-Para Drop 2:
-
-```text
-r6 inicial = 8
-EXTRA_LCK  = 24
-24 >> 2    = 6
-EXTRA_DROP = 30
-r6 final   = 38
-```
-
-Para Drop 1:
-
-```text
-r6 inicial = 16
-EXTRA_LCK  = 24
-24 >> 2    = 6
-EXTRA_DROP = 30
-r6 final   = 46
-```
-
-Por tanto, las dos ramas ejecutan correctamente la fórmula prevista.
-
-### 14.2 LCK y Rare Ghost
-
-La rutina del Rare Ghost **no se modifica directamente** por luckyJuste. Sin embargo, el Rare Ring ahora aumenta la estadística LCK real de Juste en `+24`, por lo que puede influir indirectamente en cualquier mecánica vanilla que consulte esa estadística.
-
-- Castlevania Wiki — *In-Game Formula*:
-  https://castlevania.fandom.com/wiki/In-Game_Formula
-- Kraleck — *Luck Stat PSA*, Steam Community (2021):
-  https://steamcommunity.com/app/1552550/discussions/0/3155328042348232208/
-
-Fuentes públicas históricas documentan que la probabilidad de aparición del Rare Ghost depende de LCK y que incluso con valores extremos de LCK su frecuencia observada permanece limitada. Esta parte debe distinguirse del análisis de drops anterior: la rutina del Rare Ghost no ha sido desensamblada ni validada con GDB dentro de este estudio.
-
----
-
-## 15. Conclusiones
-
-El análisis permite establecer los siguientes hechos para la ROM estudiada:
+El análisis permite establecer los siguientes hechos para la ROM original estudiada:
 
 1. Los enemigos almacenan sus dos umbrales base de drop en los offsets `0x12` (Drop 1) y `0x13` (Drop 2) de su estructura.
 2. Armor Knight utiliza `16` como umbral base para Potion y `8` para Field Armor.
 3. El motor evalúa primero Drop 2 y después Drop 1 si la ruta del objeto raro no tiene éxito.
 4. Las tiradas observadas utilizan un espacio efectivo de 1024 valores (`0–1023`).
-5. El Rare Ring original se comprueba en **ambas** ramas.
+5. El Rare Ring original se comprueba en **ambas** ramas de drop.
 6. En Drop 2, el Rare Ring añade **+16** al umbral.
 7. En Drop 1, el Rare Ring añade **+32** al umbral.
-8. El bonus se construye temporalmente en `r0`; `r6` conserva el umbral base.
+8. El bonus del Rare Ring se construye temporalmente en `r0`; `r6` conserva el umbral base leído de la estructura del enemigo.
 9. Las pruebas GDB (`8 -> 24` y `16 -> 48`) confirman dinámicamente lo observado en el desensamblado.
 10. Debido a la prioridad de Drop 2, la probabilidad efectiva por muerte de Drop 1 está condicionada al fallo de Drop 2.
-11. En la rutina vanilla de drops analizada no se observa una lectura de la LCK de Juste; el modificador específico observado es la comprobación del Rare Ring.
-12. El parche luckyJuste sustituye esa excepción por un sistema general basado en la LCK adicional del equipamiento.
-13. La versión actual del parche usa Rare Ring `+24 LCK` y un multiplicador ×1,25 truncado, produciendo `+30` de umbral en ambas ramas; este comportamiento también fue validado con GDB.
+11. En la rutina vanilla de drops analizada no se observa una lectura de la estadística LCK de Juste; el modificador específico observado es la comprobación del Rare Ring.
 
-Estas observaciones proporcionan una base reproducible para distinguir con claridad el comportamiento **vanilla** del nuevo sistema introducido por **luckyJuste**.
+Estas observaciones proporcionan una base reproducible para describir el funcionamiento del sistema de drops de la ROM original y distinguir entre los umbrales almacenados en los datos del enemigo, los valores temporales utilizados por la rutina y la probabilidad efectiva por muerte.

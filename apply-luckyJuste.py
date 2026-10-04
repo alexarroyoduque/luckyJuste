@@ -21,8 +21,8 @@ EXPECTED_DROP1 = bytes.fromhex("79 20 F8 F7 1B F9 00 28 05 D0")
 # ------------------------------------------------------------------------------
 # The clean USA ROM has a large block of 0xFF bytes at the end.
 # Use two separate areas and verify they are free before writing.
-# Each routine uses 0x24 bytes (36 bytes).
-STUB_SIZE = 0x24
+# Each routine uses 0x34 bytes (52 bytes).
+STUB_SIZE = 0x34
 STUB_DROP2_OFFSET = 0x7FFF80
 STUB_DROP1_OFFSET = 0x7FFFC0
 
@@ -95,19 +95,24 @@ def make_entry_stub(patch_offset: int, target_rom_offset: int) -> bytes:
 
 def make_drop_stub(return_addr: int) -> bytes:
     """
-    36-byte THUMB routine:
+    48-byte THUMB routine:
 
         extra_lck = LCK_ATTR - level - 24
-        extra_drop = extra_lck + (extra_lck >> 2)
+        extra_drop = (
+            extra_lck
+            + (extra_lck >> 3)
+            + (extra_lck >> 4)
+            + (extra_lck >> 6)
+        )
         r6 += extra_drop
 
-    This is equivalent to multiplying by 1.25 with integer truncation:
-
-        extra_drop = floor(extra_lck * 1.25)
+    This is an efficient approximation of x1.20 using only shifts and adds.
+    The nominal binary ratio is x1.203125. Each shift truncates independently.
 
     Registers used:
-        r0 = pointer / level / temporary copy of extra_lck
+        r0 = pointer / level / temporary shifted copy of extra_lck
         r1 = LCK, then extra_drop
+        r2 = original extra_lck
         r6 = base drop value used by the original routine
 
     Equivalent assembly:
@@ -117,8 +122,15 @@ def make_drop_stub(return_addr: int) -> bytes:
         ldrb r0, [r0]
         subs r1, r1, r0
         subs r1, #24
-        movs r0, r1
-        lsrs r0, r0, #2
+        movs r2, r1
+        movs r0, r2
+        lsrs r0, r0, #3
+        adds r1, r1, r0
+        movs r0, r2
+        lsrs r0, r0, #4
+        adds r1, r1, r0
+        movs r0, r2
+        lsrs r0, r0, #6
         adds r1, r1, r0
         adds r6, r6, r1
         ldr  r0, =return_addr
@@ -129,20 +141,29 @@ def make_drop_stub(return_addr: int) -> bytes:
         .word return_addr
     """
     code = bytes.fromhex(
-        "05 48"  # +00 ldr  r0, [pc, #20] -> literal at +24
+        "09 48"  # +00 ldr  r0, [pc, #36] -> literal at +40
         "01 88"  # +02 ldrh r1, [r0]
-        "05 48"  # +04 ldr  r0, [pc, #20] -> literal at +28
+        "09 48"  # +04 ldr  r0, [pc, #36] -> literal at +44
         "00 78"  # +06 ldrb r0, [r0]
         "09 1A"  # +08 subs r1, r1, r0
         "18 39"  # +0A subs r1, #24
-        "08 00"  # +0C movs r0, r1
-        "80 08"  # +0E lsrs r0, r0, #2
-        "09 18"  # +10 adds r1, r1, r0
-        "76 18"  # +12 adds r6, r6, r1
-        "02 48"  # +14 ldr  r0, [pc, #8] -> literal at +32
-        "00 47"  # +16 bx   r0
+        "0A 00"  # +0C movs r2, r1
+        "10 00"  # +0E movs r0, r2
+        "C0 08"  # +10 lsrs r0, r0, #3
+        "09 18"  # +12 adds r1, r1, r0
+        "10 00"  # +14 movs r0, r2
+        "00 09"  # +16 lsrs r0, r0, #4
+        "09 18"  # +18 adds r1, r1, r0
+        "10 00"  # +1A movs r0, r2
+        "80 09"  # +1C lsrs r0, r0, #6
+        "09 18"  # +1E adds r1, r1, r0
+        "76 18"  # +20 adds r6, r6, r1
+        "03 48"  # +22 ldr  r0, [pc, #12] -> literal at +48? see padding below
+        "00 47"  # +24 bx   r0
+        "C0 46"  # +26 nop; align literals
     )
 
+    # At +0x28, +0x2C, +0x30. Total size = 0x34 (52 bytes).
     stub = (
         code
         + LCK_ADDR.to_bytes(4, "little")
@@ -210,7 +231,7 @@ def apply_full_patch():
         print(f"[+] DROP 2 -> stub 0x{STUB_DROP2_OFFSET:X} / GBA 0x{gba_thumb_addr(STUB_DROP2_OFFSET):08X}")
         print(f"[+] DROP 1 -> stub 0x{STUB_DROP1_OFFSET:X} / GBA 0x{gba_thumb_addr(STUB_DROP1_OFFSET):08X}")
         print("[+] Formula: extra_lck = LCK_ATTR - level - 24")
-        print("[+] Ratio: extra_drop = extra_lck + (extra_lck >> 2)  # x1.25 truncated")
+        print("[+] Ratio: extra_drop = extra_lck + (extra_lck >> 3) + (extra_lck >> 4) + (extra_lck >> 6)  # approx x1.20 (nominal x1.203125)")
         print(f"[+] Rare Ring: +{NEW_LCK_VALUE} LCK (offset 0x{LCK_BYTE_OFFSET:X})")
 
         Path(patched_rom).write_bytes(rom_data)
