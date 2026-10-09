@@ -19,7 +19,7 @@
 #
 # Run:
 #   chmod +x patch-generator.sh
-#   ./patch-generator.sh
+#   ./patch-generator-drop.sh
 # ============================================================
 
 # Directory containing this script
@@ -30,10 +30,10 @@ VERSION="1.0.0"
 
 # Source ROMs
 ROM_ORIGINAL_USA="$SCRIPT_DIR/rom-harmony-usa.gba"
-ROM_PATCHED_USA="$SCRIPT_DIR/rom-harmony-usa-luckyJuste-$VERSION.gba"
+ROM_PATCHED_USA="$SCRIPT_DIR/rom-harmony-usa-luckyJuste-drop-$VERSION.gba"
 
 # Output patch
-PATCH_USA="$SCRIPT_DIR/luckyJuste.ips"
+PATCH_USA="$SCRIPT_DIR/luckyJuste-drop.ips"
 
 # RomPatcher.js
 ROMPATCHER="$SCRIPT_DIR/RomPatcher.js/index.js"

@@ -8,6 +8,15 @@
 
 Este documento recopila el análisis realizado mediante **desensamblado THUMB, inspección estática de la ROM y depuración con GDB/mGBA** sobre el sistema de golpes críticos de *Castlevania: Harmony of Dissonance*.
 
+Conexión típica a mGBA:
+
+```bash
+arm-none-eabi-gdb \
+  -ex "target remote localhost:2345" \
+  -ex "set architecture armv4t" \
+  -ex "set arm force-mode thumb"
+```
+
 El objetivo inicial era comprobar la fórmula atribuida a Schlave:
 
 ```text

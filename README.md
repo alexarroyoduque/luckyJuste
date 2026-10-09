@@ -1,18 +1,21 @@
 # luckyJuste
 
-A patch that makes **Luck (LCK)** affect enemy item drop rates in *Castlevania: Harmony of Dissonance* (Game Boy Advance).
+A patch that makes **Luck (LCK)** affect enemy item drop & critical rates in *Castlevania: Harmony of Dissonance* (Game Boy Advance).
 
-In the original game, **LCK has no effect on enemy item drop rates**. Equipping Luck-boosting gear does not improve your chances of getting normal or rare item drops.
+In the original game, **LCK has no effect on enemy item drop rates & critical hits**. Equipping Luck-boosting gear does not improve your chances of getting normal or rare item drops and improve critical chances.
 
-**luckyJuste fixes this by making LCK gained from equipment increase the drop rate of both normal and rare items**, while excluding the LCK Juste naturally gains from leveling.
+**luckyJuste fixes this by making LCK gained from equipment increase the drop rate and critical chance**, while excluding the LCK Juste naturally gains from leveling.
 
 [Drop calculator](https://harmony-of-dissonance-drop.web.app/).
 
 ## How to apply
 
+There are two patches.
+
 1. Get a clean USA ROM of *Castlevania: Harmony of Dissonance*.
-2. [Download luckyJuste.ips](./luckyJuste.ips).
-3. [Apply the IPS patch](https://www.romhacking.net/patch/).
+2. [Download luckyJuste-drop.ips](./luckyJuste-drop.ips).
+3. [Download luckyJuste-critical.ips](./luckyJuste-critical.ips).
+4. [Apply the IPS patch](https://www.romhacking.net/patch/).
 
 Compatible ROM:
 
@@ -21,7 +24,9 @@ Castlevania - Harmony of Dissonance (USA)
 SHA-1: B90DA0D9BE0B3A0893CD9E2C399056BCF9579E21
 ```
 
-## What does it change?
+## luckyJuste-drop
+
+### What does it change?
 
 In the original game, enemy drop rates use fixed values. The Rare Ring is handled as a special case, providing a hidden `+16` bonus to rare drops and `+32` to normal drops.
 
@@ -30,16 +35,16 @@ With luckyJuste, **LCK gained from equipment increases both normal and rare item
 Juste's natural LCK from leveling is excluded:
 
 ```text
-EXTRA_LCK = LCK_ATTR - level - 24
+EQUIPMENT_LUCKY = LCK_ATTR - level - 24
 ```
 
 Luck equipment receives an efficient approximation of a **1.20× scaling bonus** using integer arithmetic:
 
 ```text
-EXTRA_DROP = EXTRA_LCK
-           + floor(EXTRA_LCK / 8)
-           + floor(EXTRA_LCK / 16)
-           + floor(EXTRA_LCK / 64)
+EXTRA_DROP = EQUIPMENT_LUCKY
+           + floor(EQUIPMENT_LUCKY / 8)
+           + floor(EQUIPMENT_LUCKY / 16)
+           + floor(EQUIPMENT_LUCKY / 64)
 ```
 
 The nominal binary factor is `1.203125×`. Each division is truncated independently.
@@ -52,7 +57,7 @@ RNG < BASE_DROP_RATE + EXTRA_DROP
 
 The game uses an RNG range of `0–1023`, so each point added to the drop threshold represents `1/1024` of the probability space. As in the original game, the rare item is checked first. If it drops, the normal item is not evaluated.
 
-### Rare Ring
+#### Rare Ring
 
 The **Rare Ring now grants +24 LCK**, visible in Juste's stats.
 
@@ -64,11 +69,39 @@ With the patch formula:
 
 This bonus applies to both normal and rare items, replacing the original hidden Rare Ring behavior with the global LCK system.
 
-### Rare Ghost
+#### Rare Ghost
 
 The patch does **not** modify the Rare Ghost routine.
 
 Rare Ghost already uses LCK in the original game, so the Rare Ring's new `+24 LCK` can also improve its spawn rolls when it crosses the relevant LCK thresholds.
+
+## luckyJuste-critical
+
+How does critical hit chance work?
+
+- Luck is irrelevant
+
+- There is a base chance of 4096/65536 = 6.25%. When you attack an enemy, a random number is generated; if it exceeds 4096, a critical hit does not occur.
+
+  - If Juste equips the "Lucky Charm", the chances increase to 5120/65536 = 7.81%.
+
+  - If Juste equips the "Lucky Ring", the chances increase to 6144/65536 = 9.37%.
+
+  - If Juste equips both the "Lucky Charm" and "Lucky Ring", the chances increase to 7168/65536 = 10.94%.
+
+  - The critical chance doesn't increase because the "Lucky Charm" or "Lucky Ring" boost your Luck stat. The game simply detects that they are equipped and applies a flat bonus. Any other item or relic that increases Luck has no effect on the critical hit rate.
+
+- If Juste has the "Platinum Tip" equipped and the first random roll fails, a second random roll is performed with a 1/64 = 1.56% chance of success. (This second roll is only triggered if the first roll fails).
+
+### What does it change?
+
+`CRITICAL_CHANCE = 6.25 + EQUIPMENT_LUCKY*0,15 + LEVEL_BONUS`
+
+- The base chance is 4096/65536 = 6.25%, similar to the original game.
+- The luck of the equip increases the critical chance.
+- Each 10 level difference between Juste and its enemy adds 1% to the critical chance, up to a maximum of 4%.
+- The second roll is not performed if "Platinum Tip" is equipped.
+
 
 ## Credits
 
