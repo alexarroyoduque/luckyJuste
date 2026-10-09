@@ -1,27 +1,27 @@
 # luckyJuste
 
-A patch that makes **Luck (LCK)** affect enemy item drop & critical rates in *Castlevania: Harmony of Dissonance* (Game Boy Advance).
+A patch that makes Luck (LCK) affect enemy item drop rates and critical hit chances in *Castlevania: Harmony of Dissonance* (Game Boy Advance).
 
-In the original game, **LCK has no effect on enemy item drop rates & critical hits**. Equipping Luck-boosting gear does not improve your chances of getting normal or rare item drops and improve critical chances.
+In the original game, LCK has no effect on either mechanic, making Luck-boosting equipment largely ineffective.
 
-**luckyJuste fixes this by making LCK gained from equipment increase the drop rate and critical chance**, while excluding the LCK Juste naturally gains from leveling.
+**luckyJuste** fixes this by making LCK gained from equipment increase both normal and rare item drop rates, as well as critical hit chances. Only equipment bonuses count; LCK naturally gained through leveling is excluded.
 
 [Drop calculator](https://harmony-of-dissonance-drop.web.app/).
 
 ## How to apply
 
-There are two patches.
+There are two patches, you can use one of them or both.
 
 1. Get a clean USA ROM of *Castlevania: Harmony of Dissonance*.
 2. [Download luckyJuste-drop.ips](./luckyJuste-drop.ips).
 3. [Download luckyJuste-critical.ips](./luckyJuste-critical.ips).
 4. [Apply the IPS patch](https://www.romhacking.net/patch/).
 
-Compatible ROM:
-
 ```text
-Castlevania - Harmony of Dissonance (USA)
-SHA-1: B90DA0D9BE0B3A0893CD9E2C399056BCF9579E21
+Database match: Castlevania - Harmony of Dissonance (USA)
+Database: No-Intro: Game Boy Advance (v. 20210227-023848)
+File/ROM SHA-1: B90DA0D9BE0B3A0893CD9E2C399056BCF9579E21
+File/ROM CRC32: 88C1B562
 ```
 
 ## luckyJuste-drop
