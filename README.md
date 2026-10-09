@@ -77,22 +77,6 @@ Rare Ghost already uses LCK in the original game, so the Rare Ring's new `+24 LC
 
 ## luckyJuste-critical
 
-How does critical hit chance work?
-
-- Luck is irrelevant
-
-- There is a base chance of 4096/65536 = 6.25%. When you attack an enemy, a random number is generated; if it exceeds 4096, a critical hit does not occur.
-
-  - If Juste equips the "Lucky Charm", the chances increase to 5120/65536 = 7.81%.
-
-  - If Juste equips the "Lucky Ring", the chances increase to 6144/65536 = 9.37%.
-
-  - If Juste equips both the "Lucky Charm" and "Lucky Ring", the chances increase to 7168/65536 = 10.94%.
-
-  - The critical chance doesn't increase because the "Lucky Charm" or "Lucky Ring" boost your Luck stat. The game simply detects that they are equipped and applies a flat bonus. Any other item or relic that increases Luck has no effect on the critical hit rate.
-
-- If Juste has the "Platinum Tip" equipped and the first random roll fails, a second random roll is performed with a 1/64 = 1.56% chance of success. (This second roll is only triggered if the first roll fails).
-
 ### What does it change?
 
 `CRITICAL_CHANCE = 6.25 + EQUIPMENT_LUCKY*0,15 + LEVEL_BONUS`
@@ -100,7 +84,7 @@ How does critical hit chance work?
 - The base chance is 4096/65536 = 6.25%, similar to the original game.
 - The luck of the equip increases the critical chance.
 - Each 10 level difference between Juste and its enemy adds 1% to the critical chance, up to a maximum of 4%.
-- The second roll is not performed if "Platinum Tip" is equipped.
+- Only one roll is performed
 
 
 ## Credits
