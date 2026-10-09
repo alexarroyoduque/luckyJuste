@@ -4,7 +4,7 @@ from pathlib import Path
 # Run with: python apply-luckyJuste.py
 version = "1.0.0"
 original_rom = "rom-harmony-usa.gba"
-patched_rom = f"rom-harmony-usa-luckyJuste-{version}.gba"
+patched_rom = f"rom-harmony-usa-luckyJuste-drop-{version}.gba"
 
 # ------------------------------------------------------------------------------
 # 1. DROP ROUTINE PATCH POINTS
