@@ -13,3 +13,5 @@ __pycache__/
 
 web/node_modules
 web/dist
+
+web/.firebase/hosting.*.cache

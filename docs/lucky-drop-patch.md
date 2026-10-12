@@ -1,255 +1,221 @@
 # luckyJuste — referencia técnica del parche de LCK y drops
 
 **Juego:** Castlevania: Harmony of Dissonance (GBA, USA)  
-**Estado:** en desarrollo; lógica de umbrales y generación de ambos objetos verificada mediante GDB/mGBA en los escenarios descritos.  
-**Fuente de implementación:** `apply-luckyJuste-drop.py` adjunto.  
-**Alcance:** exclusivamente caída de objetos.
+**Estado:** en desarrollo; cálculos y ramas de drop contrastados con GDB/mGBA en los escenarios enumerados.  
+**Ámbito:** exclusivamente caída de objetos; no modificar críticos ni otros sistemas.  
+**Implementación de referencia:** script experimental `apply-luckyJuste-drop-test.py` utilizado en la sesión de pruebas ×0,75. **No se adjunta ni se ha auditado de nuevo el archivo Python en esta actualización:** los bytes y literales indicados proceden del desensamblado y lecturas GDB aportadas durante la conversación. Contrastar siempre con el `.py` efectivo antes de editarlo.
 
-> **PARA FUTURAS IA / MANTENEDORES — LEER PRIMERO:** El script adjunto es la fuente de verdad para los bytes y offsets. El bonus de drop es **LCK de equipo ×1**, no ×1,20; Rare Ring da **+22 LCK**, no +24. Los retornos THUMB correctos son **0x0803146B** y **0x080314B7** (PC efectivo 0x0803146A y 0x080314B6). Retornar a 0x08031460/0x080314AA reintroduce los bonus vanilla (+16/+32). Las pruebas de nivel 13 usaron ajustes manuales de RAM; no confundirlas con una subida de nivel real. La estabilidad prolongada no se ha confirmado.
+> **LEER PRIMERO — PARA FUTURAS IA / MANTENEDORES:** El objetivo vigente es `EXTRA_DROP = floor(max(0, TOTAL_LCK - level - 24) * 3/4)`, sumado al umbral base de ambos drops. **Rare Ring no añade LCK en la ROM original**: conserva sus efectos especiales vanilla de **+16 en Drop 2 (raro)** y **+32 en Drop 1 (normal)**, que se suman al bonus de LCK del equipo. **No escribir el byte LCK del Rare Ring**. Los puntos de inyección son `0x08031456` y `0x080314A0`; las rutinas observadas empiezan en `0x087FFE80` y `0x087FFF00`. La implementación ×1 y Rare Ring +22 que aparecía en documentos anteriores es **histórica, no la configuración vigente**. Las pruebas de nivel 13 manipularon RAM; no demuestran una subida real de nivel. Estabilidad prolongada y experiencia normal todavía no están confirmadas para este parche.
 
-## 1. Objetivo y contrato funcional
+## 1. Contrato funcional y fórmula exacta
 
-El juego evalúa primero el **Drop 2 (raro)** y, si no obtiene ese objeto, evalúa el **Drop 1 (normal)**. luckyJuste conserva ese orden y los datos base de los enemigos, pero hace que **solo la LCK adicional del equipamiento** aumente los umbrales de ambos drops. Sustituye la comprobación especial vanilla del Rare Ring por una regla general para cualquier equipo que sume LCK.
+El motor comprueba primero **Drop 2 (raro)** y, si no lo obtiene, evalúa **Drop 1 (normal)**. La modificación añade un bonus de LCK del equipamiento a ambos umbrales, sin cambiar el orden, el RNG, los valores base de los enemigos ni la comprobación especial vanilla del Rare Ring.
 
-```text
-NATURAL_LCK    = level + 24
-EQUIPMENT_LCK  = TOTAL_LCK - NATURAL_LCK
-EXTRA_DROP     = EQUIPMENT_LCK           # factor exacto x1.00
-DROP2_THRESHOLD = DROP2_BASE + EXTRA_DROP
-DROP1_THRESHOLD = DROP1_BASE + EXTRA_DROP
+```python
+natural_lck = level + 24
+equipment_lck = max(0, total_lck - natural_lck)
+extra_drop = (equipment_lck * 3) // 4
+rare_threshold = rare_base + extra_drop + (16 if rare_ring_equipped else 0)
+normal_threshold = normal_base + extra_drop + (32 if rare_ring_equipped else 0)
 ```
 
-La implementación no limita `EQUIPMENT_LCK` a cero. **Precondición práctica:** `TOTAL_LCK >= level + 24`. Si se viola (por ejemplo, al alterar solo el nivel en GDB), la resta THUMB puede desbordar; esto es una limitación conocida, no un comportamiento deseado. No modificar silenciosamente esta lógica sin analizar y probar sus efectos.
+La implementación THUMB observada calcula `floor(3*x/4)` como `x - floor((x+3)/4)`, para `x >= 0` y sin overflow en la suma intermedia. Para +10 LCK: `10 - ((10+3)>>2) = 10-3 = 7`. **No confundir** multiplicar la LCK de equipo por 0,75 con multiplicar el umbral base o la probabilidad total por 0,75.
 
-La estadística natural aumenta con el nivel y se descuenta. El Rare Ring aporta +22 LCK a la estadística real del personaje; Lucky Charm aportó +10 LCK en la prueba realizada. El parche no inspecciona los IDs de estos objetos al calcular drops: lee la LCK total.
+La protección observada pone a cero la LCK de equipamiento cuando la resta resulta negativa. Esto se confirmó en GDB con nivel 13 artificial, LCK total 35: el bonus en `r1` fue 0. Esta protección no equivale a una auditoría de todos los extremos de aritmética.
 
-## 2. Mapa de memoria y offsets exactos
+**Rare Ring:** el parche vigente **no modifica sus estadísticas**. Su bonus especial original se conserva mediante la llamada de comprobación de equipo `0x080296DC` y el retorno a las ramas vanilla. Si Lucky Charm aporta +10 LCK, el extra de fórmula es +7 y, con ambos equipados, se obtiene `base + 7 + 16` (raro) y `base + 7 + 32` (normal).
 
-| Recurso | Dirección GBA/RAM | Offset ROM | Descripción |
-|---|---|---|---|
-| LCK total | `0x02018558` | — | `uint16` en EWRAM |
-| Nivel | `0x0201877C` | — | `uint8` en EWRAM |
-| Punto de inyección Drop 2 | `0x08031456` | `0x031456` | Sustituye 10 bytes |
-| Punto de inyección Drop 1 | `0x080314A0` | `0x0314A0` | Sustituye 10 bytes |
-| Stub Drop 2 | `0x087FFF80` | `0x7FFF80` | 52 bytes |
-| Stub Drop 1 | `0x087FFFC0` | `0x7FFFC0` | 52 bytes |
-| Rare Ring, estructura | `0x084B2C0C` | `0x4B2C0C` | Byte de LCK en `+9` |
-| Rare Ring, byte LCK | `0x084B2C15` | `0x4B2C15` | Escribir `22` = `0x16` |
-| Retorno Drop 2 (literal THUMB) | `0x0803146B` | — | Ejecuta desde `0x0803146A` |
-| Retorno Drop 1 (literal THUMB) | `0x080314B7` | — | Ejecuta desde `0x080314B6` |
+## 2. Mapa de memoria, puntos de inyección y referencias
 
-Los stubs ocupan `0x7FFF80..0x7FFFB3` y `0x7FFFC0..0x7FFFF3`, sin solapamiento. Cada uno contiene 40 bytes de instrucciones/relleno y tres literales de 4 bytes en `+0x28`, `+0x2C` y `+0x30`.
+| Elemento | Dirección GBA/RAM | Offset ROM / notas |
+|---|---|---|
+| LCK total | `0x02018558` | `uint16`, EWRAM |
+| Nivel Juste | `0x0201877C` | `uint8`, EWRAM |
+| Inyección Drop 2 | `0x08031456` | `0x031456`, 10 bytes |
+| Inyección Drop 1 | `0x080314A0` | `0x0314A0`, 10 bytes |
+| Stub Drop 2 observado | `0x087FFE80` | offset `0x7FFE80` |
+| Stub Drop 1 observado | `0x087FFF00` | offset `0x7FFF00` |
+| Función vanilla comprobación de equipo | `0x080296DC` | entrada THUMB `0x080296DD` |
+| Drop 2, comparación con anillo | `0x08031464` | `cmp r4,r0`; umbral = `r6+16` |
+| Drop 2, comparación sin anillo | `0x0803146A` | `cmp r4,r6` |
+| Drop 1, comparación con anillo | `0x080314AE` | `cmp r4,r0`; umbral = `r6+32` |
+| Drop 1, comparación sin anillo | `0x080314B8` | `cmp r4,r6` |
+| Armor Knight (ID `0x08`) | `0x080C7F58` | umbral normal `[+0x12]=16`, raro `[+0x13]=8`, EXP=11 |
 
-### Bytes originales verificados por el script
+Los trampolines observados apuntan a `0x087FFE81` (raro; literal en `0x0803145C`) y `0x087FFF01` (normal; literal en `0x080314A4`). Los bytes interpretados como instrucciones ARM/VFP dentro de estos literales son **datos**, no instrucciones a ejecutar.
+
+**Bytes vanilla de los puntos de parcheo** (del estudio técnico):
 
 ```text
 Drop 2 @ 0x031456: 79 20 F8 F7 40 F9 00 28 04 D0
 Drop 1 @ 0x0314A0: 79 20 F8 F7 1B F9 00 28 05 D0
-Comparación Drop 2 @ 0x03146A: B4 42 0F D2
-Comparación Drop 1 @ 0x0314B6: 39 89 B4 42 15 D2
 ```
 
-El script exige una ROM USA limpia de al menos `0x800000` bytes, comprueba esos bytes y exige `0xFF` en las zonas de inyección. Aborta si las comprobaciones fallan. **No aplicar sobre una ROM ya parcheada.**
+**No reutilizar los retornos de la implementación ×1** (`0x0803146B` y `0x080314B7`) como si fueran los únicos retornos del nuevo diseño: la variante vigente tiene dos rutas de salida por stub, una para el anillo y otra sin él. **Nunca retornar a una instrucción situada dentro de los diez bytes sobrescritos**.
 
-## 3. Trampolines THUMB e implementación del stub
+## 3. Desensamblado de la implementación ×0,75 observada
 
-Los puntos de inyección tienen distinta alineación; cada trampoline mide exactamente 10 bytes. Se carga una dirección con bit 0 activado y se salta con `bx r0`.
+### 3.1 Drop 2 (raro), stub `0x087FFE80`
 
 ```asm
-; Drop 2, offset % 4 == 2
-nop
-ldr r0, [pc, #0]
-bx  r0
-.word 0x087FFF81
-
-; Drop 1, offset % 4 == 0
-ldr r0, [pc, #0]
-bx  r0
-.word 0x087FFFC1
-nop
+0x087FFE80: ldr  r0, [pc,#44]   ; literal LCK en 0x087FFEB0
+0x087FFE82: ldrh r1, [r0]
+0x087FFE84: ldr  r0, [pc,#44]   ; nivel en 0x087FFEB4
+0x087FFE86: ldrb r0, [r0]
+0x087FFE88: subs r1, r1, r0
+0x087FFE8A: subs r1, #24
+0x087FFE8C: bpl  0x087FFE90
+0x087FFE8E: movs r1, #0
+0x087FFE90: movs r2, r1
+0x087FFE92: adds r2, #3
+0x087FFE94: lsrs r2, r2, #2
+0x087FFE96: subs r1, r1, r2
+0x087FFE98: adds r6, r6, r1  ; aplica bonus ×0,75
+0x087FFE9A: movs r0, #121   ; ID de Rare Ring en la comprobación vanilla
+0x087FFE9C: ldr  r2, [pc,#28]
+0x087FFE9E: mov  lr, r2
+0x087FFEA0: ldr  r3, [pc,#20]
+0x087FFEA2: bx   r3         ; llama a comprobación original
+0x087FFEA4: cmp  r0, #0
+0x087FFEA6: beq  0x087FFEAC
+0x087FFEA8: ldr  r0, [pc,#20]
+0x087FFEAA: bx   r0         ; ruta con anillo
+0x087FFEAC: ldr  r0, [pc,#20]
+0x087FFEAE: bx   r0         ; ruta sin anillo
 ```
 
-La rutina inyectada es idéntica en ambas ramas salvo por la dirección de retorno:
-
-```asm
-+00  ldr  r0, [pc, #36]     ; literal LCK en +0x28
-+02  ldrh r1, [r0]          ; TOTAL_LCK
-+04  ldr  r0, [pc, #36]     ; literal nivel en +0x2C
-+06  ldrb r0, [r0]          ; level
-+08  subs r1, r1, r0
-+0A  subs r1, #24            ; EQUIPMENT_LCK
-+0C  adds r6, r6, r1        ; bonus x1 al umbral base
-+0E  ldr  r0, [pc, #32]     ; literal retorno en +0x30
-+10  bx   r0
-+12..+27  nop                ; relleno
-+28  .word 0x02018558
-+2C  .word 0x0201877C
-+30  .word RETURN_ADDRESS
-```
-
-**Bytes decisivos:** `76 18` (`adds r6,r6,r1`) y `08 48` (`ldr r0,[pc,#32]` desde `+0x0E`). La instrucción de carga del retorno debe apuntar al literal `+0x30`, no a la dirección de nivel `+0x2C`; un desplazamiento erróneo puede bloquear el juego.
-
-### Por qué son imprescindibles los retornos corregidos
-
-```asm
-; Drop 2 — retorno CORRECTO
-0x0803146A: cmp r4, r6
-0x0803146C: bcs 0x0803148E
-
-; Drop 1 — retorno CORRECTO
-0x080314B6: ldrh r1, [r7, #8]
-0x080314B8: cmp r4, r6
-0x080314BA: bcs 0x080314E8
-```
-
-**No regresar** a `0x08031460` ni `0x080314AA`: esas rutas vanilla ejecutan respectivamente `adds r0,#16` y `adds r0,#32`, duplicando el beneficio del Rare Ring después del bonus de LCK. El código original de comparación y las bifurcaciones de éxito/fracaso se conservan al volver a `0x0803146A` y `0x080314B6`.
-
-## 4. Probabilidades y ejemplo reproducible: Armor Knight
-
-El RNG de cada tirada se compara con un umbral sobre 1024 valores (`0..1023`): éxito si `r4 < threshold`. En el rango de umbrales relevante, `P(tirada) = threshold/1024`. Cada unidad añadida equivale a `0,09765625` puntos porcentuales absolutos.
-
-**Armor Knight (Enemy ID `0x08`, estructura `0x080C7F58`):** Drop 2 = Field Armor, base 8 (`[r7+0x13]`); Drop 1 = Potion, base 16 (`[r7+0x12]`).
-
-| Equipo/LCK adicional | Umbral raro | Prob. tirada rara | Umbral normal | Prob. tirada normal |
-|---|---:|---:|---:|---:|
-| Sin LCK adicional, +0 | 8 | 0,78125 % | 16 | 1,5625 % |
-| Lucky Charm, +10 | 18 | 1,7578125 % | 26 | 2,5390625 % |
-| Rare Ring, +22 | 30 | 2,9296875 % | 38 | 3,7109375 % |
-
-El Drop 2 tiene prioridad. La probabilidad **efectiva por muerte** del Drop 1 es `(1 - P2) × P1`, no simplemente `P1`. Los valores de la tabla son probabilidades de cada comparación individual.
-
-## 5. Pruebas GDB/mGBA REALIZADAS: evidencia y alcance
-
-Conexión típica:
-
-```bash
-arm-none-eabi-gdb \
-  -ex "target remote localhost:2345" \
-  -ex "set architecture armv4t" \
-  -ex "set arm force-mode thumb"
-```
-
-Puntos útiles del parche **actual**:
-
-```gdb
-break *0x087FFF8C    # Drop 2: suma adds r6,r6,r1
-break *0x087FFFCC    # Drop 1: suma adds r6,r6,r1
-break *0x0803146A    # Drop 2: comparación final
-break *0x080314B8    # Drop 1: comparación final
-```
-
-**Nota:** `0x080314B6` es el retorno que ejecuta `ldrh r1,[r7,#8]`; en `0x080314B8`, `r1` ya puede haber sido sobrescrito con el identificador del objeto y **no representa la LCK extra**. Observar `r1` en el stub o en Drop 2 para medir el bonus. No reutilizar direcciones internas de una rutina antigua con desplazamientos/multiplicador.
-
-### 5.1 Rare Ring, nivel 1
-
-Lecturas reales: `TOTAL_LCK=47`, `level=1`, `47-1-24=22`. En el stub de Drop 2 se observó `r1=22`, `r6=8`, y tras `adds r6,r6,r1`, `r6=30`. La carga de retorno dio `r0=0x0803146B`; `bx r0` condujo a `0x0803146A`, `cmp r4,r6`. En Drop 1 se observó `r1=22`, `r6=16`, después `r6=38`, retorno `0x080314B7` y comparación en `0x080314B8`. **Validado:** +22 en ambas ramas, sin +16/+32 adicionales.
-
-### 5.2 Sin equipamiento que aporte LCK
-
-A nivel 1 se observó `TOTAL_LCK=25`, `level=1`, bonus 0 y `r6=16` en la comparación normal. Posteriormente se simuló nivel 13 con `TOTAL_LCK=37`, `level=13` y bonus 0; se observó `r1=0`, `r6=8` en Drop 2 y `r6=16` en Drop 1. **Validado:** la LCK natural se descuenta en ambos umbrales en estas condiciones.
-
-### 5.3 Rare Ring con nivel 13 simulado
-
-Se ajustaron manualmente `level=13` y `TOTAL_LCK=59` para representar LCK natural 37 + Rare Ring 22. La fórmula devolvió 22. En Drop 2 se observó `r1=22`, `r6=30` (`r4=633`); en Drop 1 `r6=38` (`r4=291`). **Validado para RAM preparada manualmente**, no como prueba de recálculo de estadísticas por subida de nivel real.
-
-### 5.4 Lucky Charm (+10 LCK), nivel 13 simulado
-
-Al equipar Lucky Charm después de cambiar el nivel mediante GDB, el juego mostró `TOTAL_LCK=35` y `level=13`, es decir `extra_lck=-2`. Esto se explica por estadísticas desincronizadas: `25` de LCK natural correspondiente a nivel 1 + `10` del objeto, aunque el byte de nivel se había puesto a 13. Se ajustó manualmente `TOTAL_LCK=47` para representar 37+10; se comprobó `extra_lck=10`. Después se observó:
+Literales confirmados por GDB:
 
 ```text
-Drop 2: r1=10, r6=18, r4=565, pc=0x0803146A, cmp r4,r6
-Drop 1: r6=26, r4=420, pc=0x080314B8, cmp r4,r6
+0x087FFEB0 = 0x02018558  ; LCK
+0x087FFEB4 = 0x0201877C  ; nivel
+0x087FFEB8 = 0x080296DD  ; función de comprobación
+0x087FFEBC = 0x087FFEA5  ; retorno de la llamada al stub
+0x087FFEC0 = 0x08031461  ; ruta vanilla CON anillo, PC efectivo 0x08031460
+0x087FFEC4 = 0x0803146B  ; ruta vanilla SIN anillo, PC efectivo 0x0803146A
 ```
 
-**Validado:** la LCK adicional de otro objeto distinto del Rare Ring modifica ambos umbrales exactamente en +10. **No validado:** actualización automática del nivel/estadísticas tras subir de nivel de forma natural.
+**Validación de retorno sin anillo:** GDB mostró `r0=0` en `0x087FFEA4`, siguió `beq` hacia `0x087FFEAC`, cargó `0x0803146B` y `bx r0` aterrizó en `0x0803146A` con `r6=8` cuando no había LCK extra.
 
-### 5.5 Drops exitosos forzados
+### 3.2 Drop 1 (normal), stub `0x087FFF00`
 
-Se forzó `r4=0` en la comparación rara (`0x0803146A`) con un umbral positivo: el usuario confirmó que apareció Field Armor. Para la ruta normal se forzó primero el fallo del raro con `r4=1023` y luego `r4=0` en `0x080314B8`: el usuario confirmó que apareció Potion. **Validado:** ambos caminos pueden generar el objeto esperado. Estas pruebas forzaron el RNG; no miden frecuencias estadísticas reales.
+El cálculo inicial es análogo al Drop 2. Direcciones observadas:
 
-### 5.6 Estado de las comprobaciones
+```text
+0x087FFF00 entrada de stub
+0x087FFF18 adds r6,r6,r1  ; aplica bonus ×0,75
+0x087FFF1A movs r0,#121
+0x087FFF24 cmp r0,#0      ; después de volver de comprobación de equipo
+0x087FFF26 beq 0x087FFF2C
+0x087FFF28 ldr r0,[pc,#20] ; salida con anillo
+0x087FFF2A bx r0
+0x087FFF2C ldr r0,[pc,#20] ; salida sin anillo
+0x087FFF2E bx r0
+```
 
-| Comprobación | Estado |
-|---|---|
-| Fórmula ×1 y Rare Ring +22 | Confirmado por código y GDB |
-| Exclusión de LCK natural en nivel 1 y nivel 13 simulado | Confirmado por GDB |
-| Bonus de Lucky Charm +10 en ambos drops | Confirmado por GDB con RAM ajustada |
-| Ausencia de bonus vanilla duplicados | Confirmado por flujo de retorno y comparaciones |
-| Generación de Field Armor y Potion | Confirmado por el usuario con RNG forzado |
-| Subida de nivel **real** y recálculo de LCK | Pendiente |
-| Estabilidad prolongada, guardado/carga, varios enemigos | Pendiente de confirmación |
-| Equipamiento que disminuya LCK / protección de underflow | Pendiente de análisis y posible corrección |
-| Pruebas de probabilidades mediante muestreo masivo | No realizadas |
+Literales confirmados:
 
-## 6. Procedimiento mínimo para reproducir pruebas
+```text
+0x087FFF30 = 0x02018558
+0x087FFF34 = 0x0201877C
+0x087FFF38 = 0x080296DD
+0x087FFF3C = 0x087FFF25
+0x087FFF40 = 0x080314AB  ; ruta CON anillo, PC efectivo 0x080314AA
+0x087FFF44 = 0x080314B7  ; ruta SIN anillo, PC efectivo 0x080314B6
+```
 
-**Antes:** cargar la ROM parcheada generada desde ROM limpia, guardar copia del save y utilizar Armor Knight. Detener la ejecución con GDB antes de inspeccionar RAM. Si se ha modificado el nivel artificialmente, **no asumir** que la LCK total se recalculará sola.
+**Validación de retorno sin anillo:** GDB mostró `r0=0`, `r6=16`, luego `bx r0` aterrizó en `0x080314B6`, seguido de `cmp r4,r6` en `0x080314B8`.
+
+**Nota para mantener compatibilidad:** el `r6` ya aumentado por la fórmula llega a la rama original; cuando el anillo está equipado, la ROM calcula un segundo umbral temporal en `r0` sumando 16/32. No reemplazar esta comparación por la ruta sin anillo o se perdería el bonus especial.
+
+## 4. Modelo de probabilidades y Armor Knight
+
+En estas rutas el RNG efectivo tiene 1024 valores (`0..1023`); éxito si `roll < threshold`. La probabilidad por tirada es `threshold/1024` para umbrales dentro de rango. Drop 1 solo se intenta si Drop 2 no produce objeto.
+
+| Equipo | Bonus LCK | Drop raro: umbral | Drop normal: umbral |
+|---|---:|---:|---:|
+| Sin LCK extra ni anillo | 0 | 8 | 16 |
+| Lucky Charm (+10 LCK) | 7 | 15 | 23 |
+| Rare Ring solo (sin LCK extra) | 0 | 24 | 48 |
+| Lucky Charm + Rare Ring | 7 | 31 | 55 |
+
+Con ambos equipados, `P(Field Armor) = 31/1024 = 3,02734375 %`. `P(Potion | falló raro) = 55/1024 = 5,37109375 %`. La probabilidad efectiva de Potion por muerte es `(1 - 31/1024) * (55/1024) ≈ 5,20858765 %`.
+
+## 5. Registro de pruebas GDB REALIZADAS para ×0,75
+
+| Escenario | Observaciones GDB | Conclusión |
+|---|---|---|
+| Sin equipo que aporte LCK, nivel 1 | `level=1`, `TOTAL_LCK=25`, extra=0; Drop 2 `r6=8` y retorno `0x0803146A`; Drop 1 `r6=16` y retorno `0x080314B6` | Retornos sin anillo y umbrales base correctos |
+| Lucky Charm solo, nivel 1 | `TOTAL_LCK=35`, extra=10; en `0x087FFE98`, `r1=7`, `r2=3`, `r6=8 -> 15`; en `0x087FFF18`, `r1=7`, `r6=16 -> 23` | Fórmula ×0,75 aplicada a ambas ramas |
+| Lucky Charm + Rare Ring | Drop 2 `pc=0x08031464`, `r6=15`, `r0=31`; Drop 1 `pc=0x080314AE`, `r6=23`, `r0=55` | Los bonus vanilla +16/+32 se acumulan con +7 |
+| Rare Ring solo | Drop 2 `r6=8`, `r0=24`; Drop 1 `r6=16`, `r0=48` | Comportamiento original del anillo conservado en las comparaciones |
+| Nivel 13 simulado, Rare Ring solo | RAM ajustada a `level=13`, `TOTAL_LCK=37`; Drop 2 `r6=8`, `r0=24`; Drop 1 `r6=16`, `r0=48` | LCK natural excluida con RAM coherente |
+| Nivel 13 simulado, Lucky Charm | Tras equipar, juego recalculó `TOTAL_LCK=35` con `level=13`; en stub `r1=0`, `r6=8`. Fijando `TOTAL_LCK=47` **en la entrada** `0x087FFE80`, luego `r1=7`, `r2=3`; igual en `0x087FFF00` y `r6=16 -> 23` | Clamp y fórmula completa comprobados con RAM manipulada justo antes de la lectura |
+
+**Precisión importante:** el nivel 13 fue escrito con GDB; no se produjo una subida real. Si se establece `TOTAL_LCK=47` fuera de la rutina, el juego puede recalcularla y volver a 35 antes del siguiente drop. Para pruebas controladas, modificarla justo al entrar en cada stub. Una prueba en la que se hizo `set $r1=7` solo validó la suma, **no** el cálculo completo; posteriormente se validó la fórmula sin alterar `r1`.
+
+**Estado de drops exitosos:** las pruebas anteriores de aparición de Field Armor y Potion con RNG forzado pertenecían al **parche ×1**, no se deben presentar como validación del parche ×0,75. No se ha confirmado en la conversación un drop exitoso forzado con el script ×0,75.
+
+**Estado de EXP y estabilidad:** se notificaron bloqueos y experiencia anómala con **scripts experimentales anteriores** de ×0,75, pero no se depuró la causa precisa de la EXP. Las trazas actuales validan los cálculos y retornos descritos; **no consta una prueba final de estabilidad prolongada ni una medición confirmada de 11 EXP por Armor Knight con este script**. No afirmar que esos aspectos están resueltos.
+
+## 6. Procedimiento GDB para futuras comprobaciones
 
 ```gdb
-# Verificar nivel, LCK total y bonus
+# Conexión típica: arm-none-eabi-gdb -ex "target remote localhost:2345"
+set architecture armv4t
+set arm force-mode thumb
+
+# Nivel y LCK
 p/d *(unsigned char*)0x0201877C
 p/d *(unsigned short*)0x02018558
 p/d *(unsigned short*)0x02018558 - *(unsigned char*)0x0201877C - 24
 
-# Comprobar ambos umbrales
-delete breakpoints
+# Bonus de LCK antes de sumar
+break *0x087FFE98   # Drop 2, r1=bonus, r6=base
+break *0x087FFF18   # Drop 1, r1=bonus, r6=base
+
+# Comparaciones finales sin anillo
 break *0x0803146A
 break *0x080314B8
-continue
 
-# Al detenerse: comprobar r6, r4 y PC
-info registers r1 r4 r6 pc
-x/4i $pc
+# Comparaciones finales con anillo
+break *0x08031464  # r0=r6+16
+break *0x080314AE  # r0=r6+32
+
+continue
+# En el breakpoint relevante:
+info registers r0 r1 r2 r4 r6 pc
+x/5i $pc
 ```
 
-Para una prueba de **nivel 13 simulado**, sin equipo de LCK:
+Para nivel 13 **simulado** con Lucky Charm: fijar `level=13` (si se desea) y poner `TOTAL_LCK=47` **al detenerse en `0x087FFE80` o `0x087FFF00`**, justo antes de la lectura. No modificar `r1` si se pretende validar el cálculo. Para Rare Ring solo, `TOTAL_LCK=37` en nivel 13 simulado.
 
-```gdb
-set *(unsigned char*)0x0201877C = 13
-set *(unsigned short*)0x02018558 = 37
-```
+Para comprobar drops exitosos en esta variante, usar los puntos de comparación correspondientes al equipo: con anillo `0x08031464` / `0x080314AE` (`cmp r4,r0`); sin anillo `0x0803146A` / `0x080314B8` (`cmp r4,r6`). Forzar `r4=0` en la comparación deseada; para llegar a Drop 1, forzar primero fallo del raro (`r4=1023`). Registrar objeto generado y ausencia de efectos secundarios. **Estas pruebas todavía están pendientes en ×0,75.**
 
-Con Rare Ring como única fuente de LCK: `TOTAL_LCK=59`; con Lucky Charm como única fuente: `TOTAL_LCK=47`. Estos ajustes son solo para depuración; no guardar la partida como si se hubiera subido de nivel legítimamente.
+## 7. Errores históricos y reglas de seguridad
 
-Para forzar drops en Armor Knight:
+1. **No regresar dentro del tramo sobrescrito.** Un script anterior retornaba a `0x0803145D` / `0x080314A7`, dentro de los trampolines de 10 bytes; puede ejecutar literales como instrucciones, bloquear el juego o alterar el flujo.
+2. **Alineación THUMB y literales PC-relative.** Comprobar con desensamblado cada `ldr` y la palabra que carga, incluida la dirección de retorno. Los destinos de `bx` deben tener bit THUMB activado.
+3. **Conservación de `lr` y registros.** Al llamar a la comprobación vanilla de equipo, verificar el retorno al stub y el destino final. Una versión previa saltó a una dirección inválida `430A4200`. No considerar correcto un script solo porque el Python compile.
+4. **No confundir rutas del anillo.** En la variante vigente hay que volver a `0x08031460`/`0x080314AA` **si el anillo está equipado** para conservar +16/+32; y a `0x0803146A`/`0x080314B6` **si no lo está**. La instrucción de `adds r6,r6,r1` ya añadió el bonus LCK antes de la bifurcación.
+5. **No modificar la estadística del Rare Ring.** La antigua modificación del byte `0x4B2C15` a `22` no pertenece al diseño vigente. El anillo vanilla no suma LCK, sino que aplica bonuses específicos a drops.
+6. **Registro `r1` después del retorno.** Puede estar sobrescrito por el juego (`0x300` en comparaciones normales). Para leer el bonus observar `0x087FFE98` o `0x087FFF18`.
+7. **LCK artificialmente desincronizada.** Cambiar el nivel por GDB no recalcula de forma fiable el atributo. El clamp a cero impide un bonus negativo en el caso observado; no equivale a validar una subida real de nivel.
+8. **EXP anómala:** se notificó con una variante fallida, pero no se identificó su causa exacta. Antes de dar por buena otra implementación, verificar la EXP normal del Armor Knight (11), y ausencia de bloqueos, en juego real.
+9. **No extrapolar compatibilidad con otros parches.** Revisar solapamiento de offsets, región de ROM, hash, espacio libre, registros y estado de las banderas antes de combinar modificaciones.
 
-```gdb
-# En 0x0803146A: fuerza éxito del raro
-set $r4 = 0
-continue
+## 8. Pruebas pendientes (prioridad)
 
-# O, en otra muerte, en 0x0803146A fuerza fallo del raro
-set $r4 = 1023
-continue
-# En 0x080314B8 fuerza éxito del normal
-set $r4 = 0
-continue
-```
+1. **EXP y estabilidad:** desde partida normal y ROM generada con el script actual, matar varios Armor Knight, confirmar 11 EXP por enemigo, recoger objetos, cambiar de salas y comprobar que no se congela.
+2. **Generación de drops con ×0,75:** forzar Field Armor y Potion con GDB y verificar que aparecen correctamente.
+3. **Subida de nivel real:** comprobar `TOTAL_LCK - level - 24` antes y después sin manipular RAM; repetir ambos umbrales.
+4. **Equipo combinado y cambios de equipo sin GDB:** alternar Lucky Charm y Rare Ring y verificar recalculado estable.
+5. **Casos límite:** LCK adicional 0, 1, 2, 3, 4, valores elevados, estados que reducen LCK y posible overflow de aritmética de 16 bits.
+6. **Balance estadístico:** si se necesita, muestrear muchas muertes y distinguir probabilidad por tirada de probabilidad efectiva por muerte.
 
-Si no se alcanza Drop 1, puede ser porque Drop 2 haya tenido éxito. No interpretar la ausencia de segundo breakpoint como un fallo sin verificar la rama tomada.
+## 9. Convenciones de archivos y estado del desarrollo
 
-## 7. Riesgos, errores ya encontrados y precauciones para ajustes futuros
-
-1. **Desalineación de literales THUMB:** los trampolines requieren direcciones literales alineadas a 4 bytes. No cambiar la disposición de 10 bytes sin revisar PC-relative `ldr`.
-2. **Carga del retorno:** en el stub actual la instrucción correcta es `08 48` en `+0x0E`, que lee el literal en `+0x30`. Un desplazamiento erróneo puede provocar saltos inválidos y bloqueos.
-3. **Bonus vanilla duplicado:** regresar a `0x08031460` o `0x080314AA` suma +16/+32 además del bonus por LCK. Usar retornos THUMB `0x0803146B` / `0x080314B7`.
-4. **Registro `r1` sobrescrito:** en `0x080314B8` `r1` contiene otros datos (`0x300` en las pruebas), no la suerte; verificar `r6` o inspeccionar el stub antes del retorno.
-5. **Underflow de LCK:** el código no tiene clamp a cero. En pruebas manuales se observó `TOTAL_LCK=35`, `level=13` y resta matemática `-2`. No ejecutar el parche en ese estado inconsistente como si fuera un escenario normal; evaluar protección si se desea admitir equipo con LCK negativa o estados alterados.
-6. **Fuente de verdad:** consultar el Python adjunto para los bytes y tamaños. No copiar fórmulas ×1,20, Rare Ring +24 ni offsets internos de stubs anteriores.
-7. **Separación de sistemas:** no tocar rutinas de daño crítico ni efectos de Platinum Tip; no forman parte de este parche.
-8. **No confundir pruebas forzadas con probabilidad estadística:** las confirmaciones de Field Armor y Potion demuestran que los caminos funcionan, no que la distribución RNG esté empíricamente medida.
-
-## 8. Próximas pruebas recomendadas
-
-1. Subir de nivel **dentro del juego** y verificar que `TOTAL_LCK - level - 24` permanece igual con el mismo equipamiento.
-2. Repetir el cálculo con dos objetos de LCK simultáneos, y tras equipar/desequipar sin editar RAM.
-3. Jugar sin breakpoints durante 20–30 muertes, cambiar de salas, recoger objetos, guardar y recargar; registrar cualquier congelación.
-4. Revisar si existe equipo o estado legítimo con `TOTAL_LCK < level+24`; decidir si hace falta clamp antes de modificar código.
-5. Si se desea validar el balance, medir frecuencias de drops con muestras suficientes, diferenciando probabilidad por tirada y probabilidad efectiva por muerte.
-
-## 9. Parámetros del script de trabajo
-
-El script adjunto utiliza estos nombres, que deben mantenerse si se hacen ajustes futuros:
+Conservar en el script las variables solicitadas:
 
 ```python
 version = "1.0.0"
@@ -257,6 +223,4 @@ original_rom = "rom-harmony-usa.gba"
 patched_rom = f"rom-harmony-usa-luckyJuste-drop-{version}.gba"
 ```
 
-La cadena anterior es un parámetro técnico del script; **el proyecto sigue en desarrollo**. No interpretar ese campo como evidencia de publicación.
-
-**Resumen operativo:** dos stubs de 52 bytes, fórmula `r6 += TOTAL_LCK - level - 24`, Rare Ring +22, retornos a comparaciones sin bonus vanilla, pruebas GDB positivas para Rare Ring, Lucky Charm y ambos objetos generados; quedan pendientes nivel real, underflow y estabilidad prolongada.
+El número es una variable técnica; **no implica lanzamiento**. La documentación anterior de ×1 con Rare Ring +22 puede conservarse solo como historial de una implementación diferente, no como guía vigente. La fuente de verdad de una futura modificación deben ser el script efectivamente aplicado y su desensamblado, más las observaciones GDB reproducibles.
