@@ -29,17 +29,17 @@ STUB_DROP1_OFFSET = 0x7FFFC0
 LCK_ADDR = 0x02018558
 LEVEL_ADDR = 0x0201877C
 
-# After replacing 10 bytes, execution returns immediately after them.
-# Bit 0 = 1 tells BX to return in THUMB mode.
-RETURN_DROP2 = (0x08000000 + PATCH_OFFSET_DROP2 + 10) | 1  # 0x08031461
-RETURN_DROP1 = (0x08000000 + PATCH_OFFSET_DROP1 + 10) | 1  # 0x080314AB
+# Skip the vanilla Rare Ring bonus branches and resume at the original
+# no-ring comparison paths. Bit 0 = 1 selects THUMB mode.
+RETURN_DROP2 = 0x0803146B  # resume at cmp r4, r6 (0x0803146A)
+RETURN_DROP1 = 0x080314B7  # resume at ldrh r1,[r7,#8] (0x080314B6)
 
 # ------------------------------------------------------------------------------
-# 3. RARE RING: +24 LCK
+# 3. RARE RING: +22 LCK
 # ------------------------------------------------------------------------------
 RARE_RING_BASE_OFFSET = 0x4B2C0C
 LCK_BYTE_OFFSET = RARE_RING_BASE_OFFSET + 9
-NEW_LCK_VALUE = 24
+NEW_LCK_VALUE = 22
 
 
 def gba_thumb_addr(rom_offset: int) -> int:
@@ -94,87 +94,24 @@ def make_entry_stub(patch_offset: int, target_rom_offset: int) -> bytes:
 
 
 def make_drop_stub(return_addr: int) -> bytes:
-    """
-    48-byte THUMB routine:
-
-        extra_lck = LCK_ATTR - level - 24
-        extra_drop = (
-            extra_lck
-            + (extra_lck >> 3)
-            + (extra_lck >> 4)
-            + (extra_lck >> 6)
-        )
-        r6 += extra_drop
-
-    This is an efficient approximation of x1.20 using only shifts and adds.
-    The nominal binary ratio is x1.203125. Each shift truncates independently.
-
-    Registers used:
-        r0 = pointer / level / temporary shifted copy of extra_lck
-        r1 = LCK, then extra_drop
-        r2 = original extra_lck
-        r6 = base drop value used by the original routine
-
-    Equivalent assembly:
-        ldr  r0, =0x02018558
-        ldrh r1, [r0]
-        ldr  r0, =0x0201877C
-        ldrb r0, [r0]
-        subs r1, r1, r0
-        subs r1, #24
-        movs r2, r1
-        movs r0, r2
-        lsrs r0, r0, #3
-        adds r1, r1, r0
-        movs r0, r2
-        lsrs r0, r0, #4
-        adds r1, r1, r0
-        movs r0, r2
-        lsrs r0, r0, #6
-        adds r1, r1, r0
-        adds r6, r6, r1
-        ldr  r0, =return_addr
-        bx   r0
-
-        .word 0x02018558
-        .word 0x0201877C
-        .word return_addr
-    """
+    """THUMB: r6 += (LCK total - level - 24), without multiplier."""
+    # Keep the original 0x34-byte stub layout and literal locations.
     code = bytes.fromhex(
-        "09 48"  # +00 ldr  r0, [pc, #36] -> literal at +40
+        "09 48"  # +00 ldr r0, [pc, #36] -> LCK
         "01 88"  # +02 ldrh r1, [r0]
-        "09 48"  # +04 ldr  r0, [pc, #36] -> literal at +44
+        "09 48"  # +04 ldr r0, [pc, #36] -> level
         "00 78"  # +06 ldrb r0, [r0]
         "09 1A"  # +08 subs r1, r1, r0
-        "18 39"  # +0A subs r1, #24
-        "0A 00"  # +0C movs r2, r1
-        "10 00"  # +0E movs r0, r2
-        "C0 08"  # +10 lsrs r0, r0, #3
-        "09 18"  # +12 adds r1, r1, r0
-        "10 00"  # +14 movs r0, r2
-        "00 09"  # +16 lsrs r0, r0, #4
-        "09 18"  # +18 adds r1, r1, r0
-        "10 00"  # +1A movs r0, r2
-        "80 09"  # +1C lsrs r0, r0, #6
-        "09 18"  # +1E adds r1, r1, r0
-        "76 18"  # +20 adds r6, r6, r1
-        "03 48"  # +22 ldr  r0, [pc, #12] -> literal at +48? see padding below
-        "00 47"  # +24 bx   r0
-        "C0 46"  # +26 nop; align literals
+        "18 39"  # +0A subs r1, #24 (natural luck baseline)
+        "76 18"  # +0C adds r6, r6, r1 (equipment luck x1)
+        "08 48"  # +0E ldr r0, [pc, #32] -> return address at +30
+        "00 47"  # +10 bx r0
+        + "C0 46" * 11  # +12..+27 nop padding
     )
-
-    # At +0x28, +0x2C, +0x30. Total size = 0x34 (52 bytes).
-    stub = (
-        code
-        + LCK_ADDR.to_bytes(4, "little")
-        + LEVEL_ADDR.to_bytes(4, "little")
-        + return_addr.to_bytes(4, "little")
-    )
-
-    if len(stub) != STUB_SIZE:
-        raise AssertionError(
-            f"The routine must be {STUB_SIZE} bytes, but it is {len(stub)}"
-        )
+    stub = (code + LCK_ADDR.to_bytes(4, "little")
+            + LEVEL_ADDR.to_bytes(4, "little")
+            + return_addr.to_bytes(4, "little"))
+    assert len(stub) == STUB_SIZE
     return stub
 
 
@@ -212,6 +149,9 @@ def apply_full_patch():
         require_free_space(rom_data, STUB_DROP2_OFFSET, STUB_SIZE, "Stub DROP 2")
         require_free_space(rom_data, STUB_DROP1_OFFSET, STUB_SIZE, "Stub DROP 1")
 
+        require_bytes(rom_data, 0x03146A, bytes.fromhex("B4 42 0F D2"), "DROP 2 comparison")
+        require_bytes(rom_data, 0x0314B6, bytes.fromhex("39 89 B4 42 15 D2"), "DROP 1 comparison")
+
         stub_drop2 = make_drop_stub(RETURN_DROP2)
         stub_drop1 = make_drop_stub(RETURN_DROP1)
         entry_drop2 = make_entry_stub(PATCH_OFFSET_DROP2, STUB_DROP2_OFFSET)
@@ -225,13 +165,13 @@ def apply_full_patch():
         rom_data[PATCH_OFFSET_DROP2:PATCH_OFFSET_DROP2 + 10] = entry_drop2
         rom_data[PATCH_OFFSET_DROP1:PATCH_OFFSET_DROP1 + 10] = entry_drop1
 
-        # Rare Ring +24 LCK.
+        # Rare Ring +22 LCK.
         rom_data[LCK_BYTE_OFFSET] = NEW_LCK_VALUE
 
         print(f"[+] DROP 2 -> stub 0x{STUB_DROP2_OFFSET:X} / GBA 0x{gba_thumb_addr(STUB_DROP2_OFFSET):08X}")
         print(f"[+] DROP 1 -> stub 0x{STUB_DROP1_OFFSET:X} / GBA 0x{gba_thumb_addr(STUB_DROP1_OFFSET):08X}")
         print("[+] Formula: extra_lck = LCK_ATTR - level - 24")
-        print("[+] Ratio: extra_drop = extra_lck + (extra_lck >> 3) + (extra_lck >> 4) + (extra_lck >> 6)  # approx x1.20 (nominal x1.203125)")
+        print("[+] Ratio: extra_drop = extra_lck  # x1.00")
         print(f"[+] Rare Ring: +{NEW_LCK_VALUE} LCK (offset 0x{LCK_BYTE_OFFSET:X})")
 
         Path(patched_rom).write_bytes(rom_data)

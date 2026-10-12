@@ -38,16 +38,7 @@ Juste's natural LCK from leveling is excluded:
 EQUIPMENT_LUCKY = LCK_ATTR - level - 24
 ```
 
-Luck equipment receives an efficient approximation of a **1.20× scaling bonus** using integer arithmetic:
-
-```text
-EXTRA_DROP = EQUIPMENT_LUCKY
-           + floor(EQUIPMENT_LUCKY / 8)
-           + floor(EQUIPMENT_LUCKY / 16)
-           + floor(EQUIPMENT_LUCKY / 64)
-```
-
-The nominal binary factor is `1.203125×`. Each division is truncated independently.
+Luck equipment receives an efficient approximation of a **1× scaling bonus**:
 
 The final drop check becomes:
 
@@ -59,13 +50,7 @@ The game uses an RNG range of `0–1023`, so each point added to the drop thresh
 
 #### Rare Ring
 
-The **Rare Ring now grants +24 LCK**, visible in Juste's stats.
-
-With the patch formula:
-
-```text
-24 LCK -> 24 + 3 + 1 + 0 = +28 drop threshold
-```
+The **Rare Ring now grants +22 LCK**, visible in Juste's stats.
 
 This bonus applies to both normal and rare items, replacing the original hidden Rare Ring behavior with the global LCK system.
 
@@ -73,7 +58,7 @@ This bonus applies to both normal and rare items, replacing the original hidden 
 
 The patch does **not** modify the Rare Ghost routine.
 
-Rare Ghost already uses LCK in the original game, so the Rare Ring's new `+24 LCK` can also improve its spawn rolls when it crosses the relevant LCK thresholds.
+Rare Ghost already uses LCK in the original game, so the Rare Ring's new `+22 LCK` can also improve its spawn rolls when it crosses the relevant LCK thresholds.
 
 ## luckyJuste-critical
 
@@ -84,12 +69,15 @@ Rare Ghost already uses LCK in the original game, so the Rare Ring's new `+24 LC
 - The base chance is 4096/65536 = 6.25%, similar to the original game.
 - The luck of the equip increases the critical chance.
 - Each 10 level difference between Juste and its enemy adds 1% to the critical chance, up to a maximum of 4%.
-- Only one roll is performed
+- Only one roll is performed. En el juego original si Juste equipa "Platinum Tip" se realiza una segunda tirada aleatoria de 1/64 = 1,56%.
+- Por qué el factor de escalado es 0,15? Porque en el juego original hay un comportamiento oculto en el "Lucky Charm" and "Lucky Ring" increment critcal change. Haciendo cálculos "Lucky Charm" que suma 10 de suerte y "Lucky Ring" que suma 20, alcanzan da una tasa de crítico interna en el juego de 7168/65536 = 10,94%. El factor 0,15 respeta ese escalado oculto pero con el nuevo sistema afecta a cualquier objeto que sume suerte.
+
 
 
 ## Credits
 
 * AlexArroyoDuque
+* -SuXei999- - testing and qualiy
 * [Marc Robledo — RomPatcher.js](https://github.com/marcrobledo/RomPatcher.js)
 * [LagoLunatic — DSVania Editor](https://www.romhacking.net/community/4318)
 * [Zach Keene — Level stats](https://gamefaqs.gamespot.com/gba/554981-castlevania-harmony-of-dissonance/faqs/17440)
