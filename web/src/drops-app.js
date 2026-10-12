@@ -147,7 +147,7 @@ export class DropsApp extends LitElement {
       <div class="info-panel">
         In Harmony of Dissonance, Luck only affects the chance of encountering the Rare Ghost enemy. Item drop chances are calculated out of 1024, and the only way to increase them is with the Rare Ring, which adds 32/1024 to the drop chance of common items and 16/1024 to that of rare items.
 
-        In the original game, the Rare Ring did not grant any Luck. With luckyJuste, all the extra Luck granted by equipped items increases the drop rate, and the Rare Ring now also grants 24 Luck. Juste starts at level 1 with 25 Luck and gains one point of Luck per level up to level 89. As a side effect, the 24 Luck granted by the Rare Ring in the patch also improves the Rare Ghost appearance chance, since that mechanic remains unchanged from the original game.
+        In the original game, the Rare Ring did not grant any Luck. With luckyJuste, all the extra Luck granted by equipped items increases the drop rate, and the Rare Ring now also grants 22 Luck. Juste starts at level 1 with 25 Luck and gains one point of Luck per level up to level 89. As a side effect, the 22 Luck granted by the Rare Ring in the patch also improves the Rare Ghost appearance chance, since that mechanic remains unchanged from the original game.
       </div>
     `;
   }
