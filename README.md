@@ -1,8 +1,6 @@
 # luckyJuste
 
-A patch that makes Luck (LCK) affect enemy item drop rates and critical hit chances in *Castlevania: Harmony of Dissonance* (Game Boy Advance).
-
-In the original game, LCK has no effect on either mechanic, making Luck-boosting equipment largely ineffective.
+In the original *Castlevania: Harmony of Dissonance* (Game Boy Advance), LCK has no effect on either mechanic, making Luck-boosting equipment largely ineffective.
 
 **luckyJuste** fixes this by making LCK gained from equipment increase both normal and rare item drop rates, as well as critical hit chances. Only equipment bonuses count; LCK naturally gained through leveling is excluded.
 
