@@ -258,7 +258,7 @@ export class DropsApp extends LitElement {
         <td class=${this.showRareRing ? 'rare-ring-active' : ''}>
           ${renderRate(rareDisplayed, 0, this.showRareRing)}
         </td>
-        <td class=${this.showRareRingInLuckyJuste ? 'rare-ring-juste-active' : ''}>
+        <td class=${this.showRareRingInLuckyJuste ? 'rare-ring-juste-active gold' : 'gold'}>
           ${renderRate(rareWithExtraDrop, rareDelta, this.showRareRingInLuckyJuste)}
         </td>
       </tr>
