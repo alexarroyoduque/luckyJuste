@@ -320,3 +320,24 @@ th:nth-child(7),
 td:nth-child(7) {
   width: 6.8rem;
 }
+
+.rare-ring-juste-label {
+  color: #1a4c85;
+}
+
+.rare-ring-juste-label input[type='checkbox'] {
+  accent-color: #1a4c85;
+}
+
+.rare-ring-juste-text {
+  color: #1a4c85;
+}
+
+td.rare-ring-juste-active {
+  color: #1a4c85;
+  background: #e6f0fa;
+}
+
+.rate-fraction span.rare-ring-juste-active {
+  color: #1a4c85;
+}

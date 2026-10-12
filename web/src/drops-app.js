@@ -22,6 +22,7 @@ export class DropsApp extends LitElement {
   static properties = {
     filterText: { state: true },
     showRareRing: { state: true },
+    showRareRingInLuckyJuste: { state: true },
     extraLuck: { state: true },
     showInfo: { state: true },
     showDelta: { state: true },
@@ -35,6 +36,7 @@ export class DropsApp extends LitElement {
     super();
     this.filterText = '';
     this.showRareRing = false;
+    this.showRareRingInLuckyJuste = false;
     this.extraLuck = 0;
     this.showInfo = false;
     this.showDelta = false;
@@ -52,6 +54,10 @@ export class DropsApp extends LitElement {
 
   onExtraLuckInput(event) {
     this.extraLuck = Math.max(0, Number(event.target.value) || 0);
+  }
+
+  onRareRingInLuckyJusteToggle(event) {
+    this.showRareRingInLuckyJuste = event.target.checked;
   }
 
   onInfoToggle() {
@@ -128,6 +134,10 @@ export class DropsApp extends LitElement {
               @input=${this.onExtraLuckInput}
             />
           </label>
+          <label class="rare-ring-juste-label">
+            <input type="checkbox" .checked=${this.showRareRingInLuckyJuste} @change=${this.onRareRingInLuckyJusteToggle} />
+            <span class="rare-ring-juste-text">Rare Ring in luckyJuste</span>
+          </label>
           <label>
             <input type="checkbox" .checked=${this.showDelta} @change=${this.onDeltaToggle} />
             &Delta;
@@ -147,7 +157,7 @@ export class DropsApp extends LitElement {
       <div class="info-panel">
         In Harmony of Dissonance, Luck only affects the chance of encountering the Rare Ghost enemy. Item drop chances are calculated out of 1024, and the only way to increase them is with the Rare Ring, which adds 32/1024 to the drop chance of common items and 16/1024 to that of rare items.
 
-        In the original game, the Rare Ring did not grant any Luck. With luckyJuste, all the extra Luck granted by equipped items increases the drop rate, and the Rare Ring now also grants 22 Luck. Juste starts at level 1 with 25 Luck and gains one point of Luck per level up to level 89. As a side effect, the 22 Luck granted by the Rare Ring in the patch also improves the Rare Ghost appearance chance, since that mechanic remains unchanged from the original game.
+        The patch does not modify the Rare Ring hidden bonus. With luckyJuste, all the extra Luck granted by equipped items increases the drop rate. Juste starts at level 1 with 25 Luck and gains one point of Luck per level up to level 89.
       </div>
     `;
   }
@@ -205,8 +215,13 @@ export class DropsApp extends LitElement {
     const commonWithRing = commonDecimal === 0 ? 0 : commonDecimal + RARE_RING_COMMON_BONUS;
     const rareWithRing = rareDecimal === 0 ? 0 : rareDecimal + RARE_RING_RARE_BONUS;
     // Same rule applies to the luckyJuste EXTRA_DROP bonus
-    const commonWithExtraDrop = commonDecimal === 0 ? 0 : commonDecimal + extraDrop;
-    const rareWithExtraDrop = rareDecimal === 0 ? 0 : rareDecimal + extraDrop;
+    let commonWithExtraDrop = commonDecimal === 0 ? 0 : commonDecimal + extraDrop;
+    let rareWithExtraDrop = rareDecimal === 0 ? 0 : rareDecimal + extraDrop;
+    // Add Rare Ring bonus to luckyJuste if checkbox is active
+    if (this.showRareRingInLuckyJuste) {
+      commonWithExtraDrop = commonDecimal === 0 ? 0 : commonWithExtraDrop + RARE_RING_COMMON_BONUS;
+      rareWithExtraDrop = rareDecimal === 0 ? 0 : rareWithExtraDrop + RARE_RING_RARE_BONUS;
+    }
     const commonDisplayed = this.showRareRing ? commonWithRing : commonDecimal;
     const rareDisplayed = this.showRareRing ? rareWithRing : rareDecimal;
     const commonDelta = commonWithExtraDrop - commonDisplayed;
@@ -237,14 +252,14 @@ export class DropsApp extends LitElement {
         <td class=${this.showRareRing ? 'rare-ring-active' : ''}>
           ${renderRate(commonDisplayed, 0, this.showRareRing)}
         </td>
-        <td class="gold">
-          ${renderRate(commonWithExtraDrop, commonDelta)}
+        <td class=${this.showRareRingInLuckyJuste ? 'rare-ring-juste-active gold' : 'gold'}>
+          ${renderRate(commonWithExtraDrop, commonDelta, this.showRareRingInLuckyJuste)}
         </td>
         <td class=${this.showRareRing ? 'rare-ring-active' : ''}>
           ${renderRate(rareDisplayed, 0, this.showRareRing)}
         </td>
-        <td class="gold">
-          ${renderRate(rareWithExtraDrop, rareDelta)}
+        <td class=${this.showRareRingInLuckyJuste ? 'rare-ring-juste-active' : ''}>
+          ${renderRate(rareWithExtraDrop, rareDelta, this.showRareRingInLuckyJuste)}
         </td>
       </tr>
     `;
