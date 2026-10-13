@@ -4,6 +4,40 @@
   padding: 1rem;
   max-width: 1200px;
   margin: 0 auto;
+
+  /* ===== COLOR VARIABLES ===== */
+  /* Neutrals */
+  --color-text-primary: #333;
+  --color-text-secondary: #555;
+  --color-text-light: #666;
+  --color-bg-light: #f0f0f0;
+  --color-bg-lighter: #eee;
+  --color-border: #ccc;
+  --color-white: #fff;
+  --color-header-bg: #222;
+
+  /* Blue (Primary / Rare Ghost) */
+  --color-blue-primary: #0081ff;
+  --color-blue-border: #2f6fb8;
+  --color-blue-bg-light: #e6f0fa;
+  --color-blue-border-light: #a9c8e8;
+
+  /* Yellow/Gold (Lucky Juste) */
+  --color-gold: #b8860b;
+  --color-gold-text: #7a5b00;
+  --color-gold-bg: #fff6d5;
+  --color-gold-bg-dark: #e9e9e9;
+
+  /* Info Panel (Yellow) */
+  --color-info-bg: #fffbe6;
+  --color-info-border: #f0d878;
+
+  /* Purple (Rare Ring) */
+  --color-purple: #7b2fbe;
+
+  /* Status Colors */
+  --color-positive: #1a7a1a;
+  --color-negative: #b00020;
 }
 
 h1 {
@@ -28,12 +62,12 @@ h1 {
 
 .credit {
   font-size: 0.85rem;
-  color: #555;
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
 .credit a {
-  color: #1a4c85;
+  color: var(--color-blue-primary);
 }
 
 .controls {
@@ -62,7 +96,7 @@ label {
 .separator {
   width: 1px;
   align-self: stretch;
-  background: #ccc;
+  background: var(--color-border);
 }
 
 .filter-group {
@@ -73,7 +107,7 @@ label {
   align-items: flex-start;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: #e9e9e9;
+  background: var(--color-gold-bg-dark);
   border-radius: 0.4rem;
   box-sizing: border-box;
 }
@@ -85,7 +119,7 @@ label {
   align-items: center;
   gap: 1rem;
   padding: 0.5rem 0.75rem;
-  background: #fff6d5;
+  background: var(--color-gold-bg);
   border-radius: 0.4rem;
   box-sizing: border-box;
 }
@@ -96,9 +130,9 @@ label {
 }
 
 .info-button {
-  border: 1px solid #b8860b;
-  background: #fff;
-  color: #7a5b00;
+  border: 1px solid var(--color-gold);
+  background: var(--color-white);
+  color: var(--color-gold-text);
   border-radius: 0.3rem;
   padding: 0.15rem 0.5rem;
   font-size: 0.8rem;
@@ -106,9 +140,9 @@ label {
 }
 
 .rare-ghost-button {
-  border: 1px solid #2f6fb8;
-  background: #fff;
-  color: #1a4c85;
+  border: 1px solid var(--color-blue-border);
+  background: var(--color-white);
+  color: var(--color-blue-border);
   border-radius: 0.3rem;
   padding: 0.15rem 0.5rem;
   font-size: 0.8rem;
@@ -120,11 +154,11 @@ label {
   box-sizing: border-box;
   margin: -0.5rem 0 1rem;
   padding: 0.75rem 1rem;
-  background: #fffbe6;
-  border: 1px solid #f0d878;
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
   border-radius: 0.4rem;
   font-size: 0.85rem;
-  color: #333;
+  color: var(--color-text-primary);
   line-height: 1.4;
 }
 
@@ -133,17 +167,17 @@ label {
   box-sizing: border-box;
   margin: -0.5rem 0 1rem;
   padding: 0.75rem 1rem;
-  background: #e6f0fa;
-  border: 1px solid #a9c8e8;
+  background: var(--color-blue-bg-light);
+  border: 1px solid var(--color-blue-border-light);
   border-radius: 0.4rem;
   font-size: 0.85rem;
-  color: #333;
+  color: var(--color-text-primary);
   line-height: 1.4;
 }
 
 .rare-ghost-title {
   font-weight: 600;
-  color: #1a4c85;
+  color: var(--color-blue-border);
   margin-bottom: 0.5rem;
 }
 
@@ -169,7 +203,7 @@ label {
 
 .formula {
   font-size: 0.85rem;
-  color: #555;
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
@@ -181,20 +215,20 @@ label {
 }
 
 .lucky-box[readonly] {
-  background: #eee;
-  color: #333;
+  background: var(--color-bg-lighter);
+  color: var(--color-text-primary);
 }
 
 .rare-ring-label {
-  color: #7b2fbe;
+  color: var(--color-purple);
 }
 
 .rare-ring-label input[type='checkbox'] {
-  accent-color: #7b2fbe;
+  accent-color: var(--color-purple);
 }
 
 td.rare-ring-active {
-  color: #7b2fbe;
+  color: var(--color-purple);
 }
 
 .delta {
@@ -203,11 +237,11 @@ td.rare-ring-active {
 }
 
 .delta.positive {
-  color: #1a7a1a;
+  color: var(--color-positive);
 }
 
 .delta.negative {
-  color: #b00020;
+  color: var(--color-negative);
 }
 
 table {
@@ -218,7 +252,7 @@ table {
 
 th,
 td {
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
   padding: 0.2rem 0.3rem;
 }
 
@@ -250,13 +284,13 @@ td:nth-child(2) a {
 }
 
 .rate-fraction {
-  color: #666;
+  color: var(--color-text-light);
   font-size: 0.75em;
   white-space: nowrap;
 }
 
 .rate-fraction span.rare-ring-active {
-  color: #7b2fbe;
+  color: var(--color-purple);
 }
 
 td:nth-child(2),
@@ -287,23 +321,23 @@ td:nth-child(4) {
 }
 
 thead th {
-  background: #222;
-  color: #fff;
+  background: var(--color-header-bg);
+  color: var(--color-white);
   position: sticky;
   top: 0;
 }
 
 thead th.gold {
-  background: #b8860b;
-  color: #fff;
+  background: var(--color-gold);
+  color: var(--color-white);
 }
 
 tbody td {
-  background: #f0f0f0;
+  background: var(--color-bg-light);
 }
 
 tbody td.gold {
-  background: #fff6d5;
+  background: var(--color-gold-bg);
 }
 
 th:nth-child(1),
@@ -322,22 +356,22 @@ td:nth-child(7) {
 }
 
 .rare-ring-juste-label {
-  color: #1a4c85;
+  color: var(--color-blue-primary);
 }
 
 .rare-ring-juste-label input[type='checkbox'] {
-  accent-color: #1a4c85;
+  accent-color: var(--color-blue-primary);
 }
 
 .rare-ring-juste-text {
-  color: #1a4c85;
+  color: var(--color-blue-primary);
 }
 
 td.rare-ring-juste-active {
-  color: #1a4c85;
-  background: #e6f0fa;
+  color: var(--color-blue-primary);
+  background: var(--color-blue-bg-light);
 }
 
 .rate-fraction span.rare-ring-juste-active {
-  color: #1a4c85;
+  color: var(--color-blue-primary);
 }

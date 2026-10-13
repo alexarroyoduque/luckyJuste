@@ -227,7 +227,7 @@ export class DropsApp extends LitElement {
     const commonDelta = commonWithExtraDrop - commonDisplayed;
     const rareDelta = rareWithExtraDrop - rareDisplayed;
 
-    const renderRate = (value, delta = 0, isRareRingActive = false) => html`
+    const renderRate = (value, delta = 0, rareRingClass = '') => html`
       <span class="rate-value">
         <span class="rate-percent">
           ${toPercent(value)}
@@ -236,7 +236,7 @@ export class DropsApp extends LitElement {
             : ''}
         </span>
         <span class="rate-fraction">
-          <span class=${isRareRingActive ? 'rare-ring-active' : ''}>${value}</span>/1024
+          <span class=${rareRingClass}>${value}</span>/1024
         </span>
       </span>
     `;
@@ -250,16 +250,16 @@ export class DropsApp extends LitElement {
         <td>${monster.drop.common.item ?? '-'}</td>
         <td>${monster.drop.rare.item ?? '-'}</td>
         <td class=${this.showRareRing ? 'rare-ring-active' : ''}>
-          ${renderRate(commonDisplayed, 0, this.showRareRing)}
+          ${renderRate(commonDisplayed, 0, this.showRareRing ? 'rare-ring-active' : '')}
         </td>
         <td class=${this.showRareRingInLuckyJuste ? 'rare-ring-juste-active gold' : 'gold'}>
-          ${renderRate(commonWithExtraDrop, commonDelta, this.showRareRingInLuckyJuste)}
+          ${renderRate(commonWithExtraDrop, commonDelta, this.showRareRingInLuckyJuste ? 'rare-ring-juste-active' : '')}
         </td>
         <td class=${this.showRareRing ? 'rare-ring-active' : ''}>
-          ${renderRate(rareDisplayed, 0, this.showRareRing)}
+          ${renderRate(rareDisplayed, 0, this.showRareRing ? 'rare-ring-active' : '')}
         </td>
         <td class=${this.showRareRingInLuckyJuste ? 'rare-ring-juste-active gold' : 'gold'}>
-          ${renderRate(rareWithExtraDrop, rareDelta, this.showRareRingInLuckyJuste)}
+          ${renderRate(rareWithExtraDrop, rareDelta, this.showRareRingInLuckyJuste ? 'rare-ring-juste-active' : '')}
         </td>
       </tr>
     `;
