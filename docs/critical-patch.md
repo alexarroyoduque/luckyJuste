@@ -1,3 +1,282 @@
+# luckyJuste — Critical Hit Patch (documentación de mantenimiento)
+
+**Juego:** *Castlevania: Harmony of Dissonance*, GBA, ROM USA.  
+**Estado de referencia:** parche lineal con bonus por LCK equipada y segunda tirada condicional de Platinum Tip, validado funcionalmente con GDB en **26 impactos**.  
+**Script:** `apply-luckyJuste-critical-max.py` (mismo ejecutable THUMB que `apply-luckyJuste-critical.py`; solo cambia la lista de valores de ejemplo impresa).  
+**Depuración:** `validate-luckyJuste-critical.gdb` — versión para stub lineal de **132 bytes**.  
+**Atención al número de versión:** el script actual declara `VERSION = "1.0.0"`, aunque ese identificador también se utilizó en etapas anteriores del proyecto. Para identificar la compilación se deben comparar **fórmula, tamaño y bytes del STUB**, no confiar únicamente en el nombre del archivo o en `VERSION`.
+
+## 1. Contrato funcional actual
+
+- Crítico base: **6,25 %** (umbral `4096` sobre `65536`).
+- La **LCK adicional del equipamiento** aumenta el umbral mediante una fórmula lineal de enteros.
+- **Lucky Charm y Lucky Ring** no tienen bonos especiales de crítico por estar equipados; únicamente aportan la LCK que suman a la estadística total. Otros objetos con igual LCK adicional se tratan igual.
+- **No hay bonus por diferencia de nivel** con el enemigo; tampoco se lee el nivel del enemigo para calcular el crítico actual.
+- **Platinum Tip sí conserva una segunda tirada**, únicamente si la primera no ha sido crítica y se cumplen las condiciones originales del tipo de ataque y el flag.
+- Cuando hay crítico, la rutina original de daño **duplica el daño (`×2`)**. El indicador visual requiere activar la reliquia que muestra el daño.
+- El valor **63 LCK equipada** es el máximo de diseño informado para las pruebas; **no es un límite implementado en el código**. Cambiar el listado de ejemplo de 79 a 63 no introduce un clamp.
+
+## 2. Fórmula exacta del parche
+
+```python
+juste_level = *(uint8*)0x0201877C
+lck_total   = *(uint16*)0x02018558
+x = max(0, lck_total - juste_level - 24)
+bonus_units = 102 * x + (x >> 1)  # x >> 1 equivale a floor(x/2) para x >= 0
+threshold = min(65536, 4096 + bonus_units)
+roll = original_RNG() & 0xFFFF
+primary_critical = (roll < threshold)
+```
+
+El objetivo matemático de diseño era que **0 LCK → +0 %** y **30 LCK → +4,69 puntos porcentuales**:
+
+\[
+B_{objetivo}(x) = x\cdot\frac{4,69}{30}\ \text{puntos porcentuales}
+\]
+
+La aproximación implementada no usa decimales:
+
+\[
+U(x)=102x+\lfloor x/2\rfloor,\quad
+P_1(x)=\frac{\min(65536,4096+U(x))}{65536}\cdot100\%.
+\]
+
+El truncamiento de `x >> 1` afecta a los **medios puntos de umbral**, no al porcentaje completo. Por ejemplo, para `x=30`: `3060 + 15 = 3075`; `4096+3075=7171`; `7171/65536×100 ≈ 10,94208 %`.
+
+### Tabla de referencia (probabilidad de la primera tirada)
+
+| LCK equipada `x` | Bonus (unidades) | Umbral | Probabilidad total |
+|---:|---:|---:|---:|
+| 0 | 0 | 4096 | 6.25000 % |
+| 8 | 820 | 4916 | 7.50122 % |
+| 10 | 1025 | 5121 | 7.81403 % |
+| 20 | 2050 | 6146 | 9.37805 % |
+| 30 | 3075 | 7171 | 10.94208 % |
+| 40 | 4100 | 8196 | 12.50610 % |
+| 63 | 6457 | 10553 | 16.10260 % |
+
+**Google Sheets** (si `F4` contiene `x` y la celda de salida está formateada como porcentaje):
+
+```excel
+=MIN(65536;4096+102*MAX(0;F4)+ENTERO(MAX(0;F4)/2))/65536
+```
+
+Si se desea mostrar el bonus en **puntos porcentuales numéricos** (no como fracción):
+
+```excel
+=(102*MAX(0;F4)+ENTERO(MAX(0;F4)/2))/65536*100
+```
+
+No confundir la aproximación del juego con `=F4*4,69/30`, que representa el objetivo matemático ideal pero puede diferir ligeramente por los enteros.
+
+## 3. Platinum Tip: segunda tirada conservada
+
+La rutina ejecuta la segunda tirada **solo** cuando se cumplen simultáneamente:
+
+1. La tirada primaria **falló** (`roll >= threshold`).
+2. El identificador de ataque está entre **2 y 5**, inclusive.
+3. Está activo el bit `0x80` en `*(uint32*)0x02018528`.
+
+La condición de éxito de la segunda tirada es:
+
+```c
+secondary_critical = ((original_RNG() & 0xF003) == 0);
+```
+
+La máscara `0xF003` selecciona seis bits. Si los bits del RNG son equiprobables, el éxito nominal es `1/64 = 1,5625 %` **por segunda tirada elegible**, independientemente del bonus de LCK de la primera. Si la primera ya fue crítica, no debe ejecutarse la segunda. La probabilidad total para un ataque elegible, bajo la hipótesis de tiradas uniformes e independientes, es `Ptotal = P1 + (1-P1)/64`; para ataques no elegibles es `Ptotal = P1`. El daño base del ataque puede ser distinto al equipar Platinum Tip: no atribuir ese cambio al crítico.
+
+**Importante:** el código vanilla de la segunda tirada en `0x08077CE0` queda **evitado** por el trampolín. La segunda tirada está **reimplementada dentro del stub nuevo**. Por tanto, es correcto observar `new_second > 0` y `old_second = 0`.
+
+## 4. Direcciones RAM y ROM
+
+### RAM y estadísticas
+
+| Concepto | Dirección / expresión | Uso actual |
+|---|---|---|
+| Nivel Juste | `0x0201877C` (`uint8`) | Restar LCK natural |
+| LCK total Juste | `0x02018558` (`uint16`) | Calcular LCK equipada |
+| Flags de ataque / Platinum Tip | `0x02018528` (`uint32`) | Comprobar bit `0x80` |
+| Umbral vanilla histórico | `0x02018524` (`uint32`) | Referencia histórica, **no umbral del stub actual** |
+| STR Juste | `0x02018552` (`uint16`) | Referencia histórica, no participa en esta fórmula |
+
+La fórmula de LCK natural utilizada es `JusteLevel + 24`. Si se usa el truco de nivel 50 `3201877C 0032`, puede dejar las estadísticas en valores de nivel 1; para pruebas reproducibles, confirmar la LCK real en RAM. El juego puede recalcularla al cambiar el equipo o durante la ejecución. Un ajuste GDB como `set *(unsigned short*)0x02018558 = 104` debe hacerse justo antes de que el stub lea la estadística si se desea evitar esa restauración.
+
+### Puntos de inyección y rutina
+
+| Dirección GBA | Offset ROM | Función |
+|---|---|---|
+| `0x08077CAC` | `0x077CAC` | Entrada de críticos original; sustituida por trampolín de 8 bytes |
+| `0x087FFD00` | `0x7FFD00` | Entrada de stub THUMB **132 bytes (`0x84`)** |
+| `0x087FFD2A` | `0x7FFD2A` | Umbral primario listo en `r6` |
+| `0x087FFD38` | `0x7FFD38` | Comparación del RNG primario (`r0`) con `r6` |
+| `0x087FFD54` | `0x7FFD54` | Ruta de segunda tirada Platinum dentro del stub |
+| `0x087FFD5A` | `0x7FFD5A` | Resultado enmascarado de segunda tirada en `r0` |
+| `0x080312D4` | `0x0312D4` | Retorno al caller original; `r0=0/1` |
+| `0x080312DC` | `0x0312DC` | Daño después del posible `×2` |
+| `0x08077CE0` | `0x077CE0` | Segunda tirada **vanilla antigua**, debe quedar inaccesible en impactos parcheados |
+| `0x08000A78` | `0x000A78` | RNG original (referencia del estudio) |
+
+El **caller `0x080312CE` no se modifica** en esta versión. Conserva el argumento de ataque en `r0` necesario para Platinum Tip. En la versión histórica con bonus por nivel se sustituía `mov r0,r7` por `mov r0,r9`, pero **esa modificación NO debe aplicarse al parche actual**.
+
+El trampolín THUMB de 8 bytes es:
+
+```asm
+ldr r3, [pc, #0]
+bx  r3
+.word 0x087FFD01   ; bit 0 activo: modo Thumb
+```
+
+### Referencia histórica: nivel del enemigo (ya no utilizado)
+
+El estudio anterior confirmó el acceso `EnemyID = *(uint8*)(EnemyEntity + 0x3E)`, `DNABase = *(uint32*)0x03002B10`, `EnemyLevel = *(uint8*)(DNABase + EnemyID*36 + 0x10)`.
+
+| Enemigo | ID | Dirección DNA | Nivel confirmado |
+|---|---:|---|---:|
+| Armor Knight | 8 | `0x080C7F58` | 4 |
+| White Dragon | 13 | `0x080C800C` | 6 |
+
+Esta información se conserva para mantenimiento e investigación, **pero no debe introducirse de nuevo en la fórmula actual por accidente**.
+
+## 5. Ensamblador: lógica y mantenimiento
+
+El código es **ARM7TDMI/Thumb-1**, usa operaciones enteras y un bloque embebido `STUB = bytes.fromhex(...)` en el script Python. El pseudocódigo THUMB de la parte aritmética es:
+
+```asm
+; x = max(0, LCK_TOTAL - LEVEL - 24)
+; bonus = 102*x + (x >> 1)
+movs r0, #102
+muls r6, r0           ; registro ilustrativo: producto 102*x
+lsrs r0, r5, #1       ; floor(x/2), si r5=x
+adds r6, r6, r0
+; sumar 4096, saturar en 65536, obtener RNG de 16 bits,
+; comparar y, si falla, evaluar condiciones de Platinum Tip.
+```
+
+Este fragmento es **ilustrativo**, no un desensamblado literal del stub. Para modificar instrucciones debe desensamblarse o reensamblarse el blob real; no asumir que los registros del ejemplo son idénticos a los usados en cada punto. El script genera **132 bytes** y guarda los literales de RAM/RNG en su propio pool. No utiliza división general ni coma flotante.
+
+**Para ajustar la fórmula en el futuro:**
+
+1. Cambiar la fórmula de diseño y derivar una versión entera para `threshold`.
+2. Actualizar **tanto** `bonus_units()` (referencia/impresión) **como el ensamblador del `STUB`**; cambiar solo Python no modifica la rutina ejecutada por la GBA.
+3. Reensamblar para `armv4t` / Thumb-1 y revisar `LDR` literales, alineación, saltos, registros preservados y retorno.
+4. Comprobar que el nuevo stub cabe en espacio libre y no invade regiones de otros parches.
+5. Verificar el trampolín, el argumento original del caller y las condiciones de Platinum Tip.
+6. **Actualizar el mapa de direcciones GDB si cambia el layout del stub**. El `.gdb` es genérico respecto a coeficientes, pero sus breakpoints dependen de direcciones de instrucciones concretas.
+7. Ejecutar las pruebas de GDB y comparar el log con la **nueva** fórmula, no con una fórmula histórica.
+
+### Restricciones de ROM
+
+```text
+ROM entrada: rom-harmony-usa.gba (USA limpia)
+Tamaño:      0x800000 bytes
+SHA-1:       b90da0d9be0b3a0893cd9e2c399056bcf9579e21
+Salida:      rom-harmony-usa-luckyJuste-critical-1.0.0.gba
+Entrada:     offset 0x077CAC, 8 bytes
+Stub:        offset 0x7FFD00, 132 bytes
+```
+
+El script comprueba tamaño, SHA-1, bytes originales de entrada (`30 B5 00 04 05 0C 00 24`) y que la zona de 132 bytes del stub esté llena de `FF`. No parchear una ROM ya modificada sin adaptar las comprobaciones.
+
+**Compatibilidad con drops:** el parche de drops histórico utilizaba stubs `0x7FFF80` y `0x7FFFC0`, distintos de `0x7FFD00`, pero eso **no demuestra** compatibilidad total. Hay que revisar todas las modificaciones, el tamaño libre, los hooks, la verificación de origen y probar la ROM combinada. El script de críticos actual espera una ROM USA limpia, no una ROM de drops.
+
+## 6. Pruebas automatizadas con GDB
+
+### Preparación
+
+- Cargar en mGBA una ROM generada **con este script lineal** (no una versión con bonus por nivel o por tramos).
+- Abrir una sesión nueva de GDB conectada al emulador, en arquitectura `armv4t` y modo Thumb.
+- Situar `validate-luckyJuste-critical.gdb` en el directorio de trabajo de GDB.
+
+```gdb
+set architecture armv4t
+set arm force-mode thumb
+source validate-luckyJuste-critical.gdb
+```
+
+El `.gdb` activa el registro en `luckyJuste-critical-validation.log` y continúa el juego automáticamente. **No requiere etiquetas de fase.** Se puede atacar, equipar y desequipar libremente. Cada 10.º impacto registrado (`10`, `20`, `30`, ...) el GDB cambia la **tirada primaria** a `0` para forzar un crítico; registra también el valor RNG natural. Los críticos forzados son pruebas funcionales, **no muestras válidas para estimar frecuencias estadísticas naturales**.
+
+Para finalizar: pulsar **Ctrl+C** y ejecutar solamente:
+
+```gdb
+set logging enabled off
+```
+
+Después adjuntar `luckyJuste-critical-validation.log` a una IA. Los resúmenes acumulados `[SUMMARY]` quedan impresos después de cada impacto. No es necesario consultar manualmente los contadores.
+
+### Qué significa cada línea del log
+
+| Etiqueta | Significado |
+|---|---|
+| `[CHANGE]` | Cambio detectado de nivel, LCK o bit Platinum; **no identifica por nombre los accesorios** |
+| `[ENTRY]` | ID del ataque, nivel, LCK total, LCK equipada y bit Platinum |
+| `[THRESH]` | Umbral real y bonus en unidades enteras |
+| `[PRIMARY]` | RNG natural, RNG usado, resultado y si fue forzado |
+| `[SECOND_START]` | Entrada en segunda tirada del stub nuevo |
+| `[SECOND_MASKED]` | RNG secundario enmascarado; `0` significa éxito |
+| `[RETURN]` | Crítico `0/1`, rutas usadas y daño anterior |
+| `[DAMAGE]` | Daño después del posible `×2` |
+| `[SUMMARY]` | Contadores acumulados, incluyendo errores y acceso a la segunda tirada vanilla |
+| `[FAIL]` / `[ALERT]` | Incidencia que requiere análisis; revisar si la instrumentación es correcta antes de atribuirla al parche |
+
+**Límites de evidencia:** la LCK total no revela qué accesorio exacto se equipó. La correspondencia umbral/LCK demuestra ausencia de **bonus adicional en los casos observados**, pero para demostrar equivalencia de identidad entre objetos es conveniente comparar distintas combinaciones que produzcan la **misma LCK equipada**, o instrumentar el inventario/equipo. Tampoco se puede demostrar que una ruta sea universalmente inaccesible solo porque un breakpoint no saltó durante una sesión limitada.
+
+### Resultados de la última batería: 26 impactos
+
+Archivo analizado: `luckyJuste-critical-validation(1).log` (última batería sobre el parche lineal). Resumen final:
+
+```text
+hits=26 returns=26 damages=26
+forced=2 forced_with_platinum=1
+new_second=7 old_second=0 violations=0
+```
+
+| LCK equipada | Umbral observado | Esperado por fórmula | Resultado |
+|---:|---:|---:|---|
+| 0 | 4096 | 4096 | Coincide |
+| 10 | 5121 | 5121 | Coincide |
+| 20 | 6146 | 6146 | Coincide |
+| 30 | 7171 | 7171 | Coincide |
+
+**Evidencia de rutas:** impacto 7: crítico natural (`2887 < 5121`), daño `10 → 20`. Impacto 10: crítico forzado, `10 → 20`. Impacto 20: Platinum activo, RNG primario forzado a `0`, **sin segunda tirada**, daño `20 → 40`. Impacto 22: crítico primario natural con Platinum, **sin segunda tirada**, daño `3 → 6`. Impactos 18–19 y 21, 23–26: primera tirada fallida con Platinum y ataque elegible; se ejecutó la segunda tirada. No hubo un éxito secundario en esta sesión, **pero sí en un log anterior del parche por tramos**, por lo que ese éxito no debe atribuirse como prueba específica de esta compilación lineal.
+
+**Conclusión delimitada:** para los 26 impactos registrados, umbrales, comparaciones, retorno, duplicación de daño y activación/omisión de la segunda tirada fueron coherentes con el diseño, sin violaciones detectadas. **Pendiente:** prueba específica con 63 LCK, éxito secundario de Platinum en la compilación lineal, más ataques/armas, estabilidad prolongada y ROM combinada con drops.
+
+## 7. Prompt reutilizable para analizar logs con una IA
+
+Copiar íntegro el siguiente texto y adjuntar el archivo `.log`. Si se cambia la fórmula en el futuro, actualizar también el bloque «fórmula vigente» de este prompt:
+
+> **Actúa como auditor técnico de un parche ARM7TDMI/Thumb-1 de Castlevania: Harmony of Dissonance (USA).** Analiza el archivo `luckyJuste-critical-validation.log` adjunto y no des por validado nada que no aparezca en el registro. El GDB registra impactos consecutivos y fuerza el RNG primario a cero cada 10 impactos; separa esos casos de los RNG naturales.
+>
+> **Fórmula vigente:** `x=max(0,LCK_TOTAL-JusteLevel-24)`; `bonus_units=102*x+floor(x/2)`; `threshold=min(65536,4096+bonus_units)`; crítico primario si `RNG16 < threshold`. **No hay bonus por nivel del enemigo**. La LCK máxima prevista del equipamiento es 63, sin clamp explícito en el parche.
+>
+> **Platinum Tip:** únicamente si la primera tirada falla, el ID de ataque está entre 2 y 5 y el flag `0x80` está activo, ejecutar la segunda tirada con éxito si `(RNG & 0xF003)==0`. Si la primera tirada ya es crítica, la segunda NO debe ejecutarse. La segunda tirada debe realizarse en el **stub nuevo**, no en la rutina vanilla `0x08077CE0`.
+>
+> **Lucky Charm y Lucky Ring:** no deben añadir bonus especiales solo por estar equipados. Únicamente deben influir a través de la LCK total efectiva, como cualquier otra pieza. No supongas qué accesorio concreto estaba equipado si el log no registra su ID.
+>
+> **Verificaciones por impacto:** (1) calcular `x` desde `[ENTRY]`; (2) calcular umbral esperado y contrastar `[THRESH]`; (3) comparar RNG **usado** contra umbral en `[PRIMARY]`; (4) comprobar que `[RETURN]` coincide con el éxito de la primera tirada o, si se usó, la segunda; (5) comprobar que `[DAMAGE]` duplica el daño solo en crítico; (6) comprobar la elegibilidad y exclusión mutua de Platinum; (7) detectar accesos a la antigua segunda tirada; (8) agrupar impactos por LCK y nivel para descubrir bonus ajenos a LCK, y por flag Platinum para comprobar que no modifica el umbral primario; (9) identificar las pruebas ausentes y posibles falsas alarmas de GDB por breakpoints/registros incorrectos.
+>
+> **Entrega:** una tabla con LCK, umbral observado, umbral esperado y probabilidad; un resumen de número de impactos, críticos naturales/forzados/secundarios, segundas tiradas elegibles y ejecutadas, errores reales y rutas antiguas alcanzadas; ejemplos de líneas concretas del log; veredicto separado en «validado», «indicios compatibles» y «pendiente». No infieras éxito estadístico a partir de pocas tiradas ni afirmes que un accesorio concreto fue detectado si solo se conoce la LCK.
+
+## 8. Archivo histórico y cambios respecto a versiones anteriores
+
+Esta versión **sustituye** el diseño anterior, pero se conserva el documento recibido como apéndice de referencia. En el apéndice aparecen fórmulas con `×98`, bonus por nivel y eliminación de Platinum Tip: **son históricas y no deben aplicarse al script lineal actual**.
+
+| Etapa | Bonus de LCK | Bonus por nivel | Platinum Tip |
+|---|---|---|---|
+| Parche inicial | `105×x` | Sí, máximo 4 tramos | Segunda tirada eliminada |
+| Revisión 0,15 % | `98×x` | Sí, máximo 4 tramos | Segunda tirada eliminada |
+| Revisión 0,10 % | `66×x` | Sí, máximo 4 tramos | Segunda tirada eliminada |
+| Parche por tramos | Interpolación entera entre puntos de balance | No | Segunda tirada condicional restaurada |
+| **Parche lineal actual** | **`102×x + (x>>1)`** | **No** | **Segunda tirada condicional restaurada** |
+
+**Fuente de verdad para modificar el ejecutable:** el script Python lineal que contiene el `STUB` de 132 bytes. **Fuente de verdad para observar ejecución:** el GDB con los offsets correspondientes a ese mismo stub. **Fuente de verdad para el balance:** fórmula vigente y umbrales contrastados con los logs.
+
+---
+
+## Apéndice A — Documento anterior recibido (ARCHIVO HISTÓRICO; NO VIGENTE)
+
+> El contenido a continuación se conserva íntegro como historial del estudio. Todas sus instrucciones operativas y fórmulas de la versión `×98` son obsoletas para el parche lineal actual. Consultar las secciones 1–7 anteriores para mantenimiento y pruebas.
+
 # luckyJuste — Critical Hit Patch
 
 **Juego:** Castlevania: Harmony of Dissonance (USA, GBA)  

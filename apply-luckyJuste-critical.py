@@ -1,98 +1,87 @@
-version = "1.0.0"
-original_rom = "rom-harmony-usa.gba"
-patched_rom = f"rom-harmony-usa-luckyJuste-critical-{version}.gba"
+#!/usr/bin/env python3
+"""Apply luckyJuste linear critical patch to a clean Harmony of Dissonance USA ROM.
 
-"""Apply the experimental luckyJuste critical-hit patch to a CLEAN USA ROM.
+The requested linear bonus passes through (equipment LCK=0, bonus=0%) and
+(equipment LCK=30, bonus=4.69%). To avoid floating point on ARM7TDMI, the
+Thumb stub uses bonus_units = 102*x + (x >> 1). This is a close integer
+approximation: at x=30, bonus=3075/65536*100 = 4.6920776 percentage points.
 
-Formula (integer threshold units):
-    equipment_luck = max(0, LCK_ATTR - JusteLevel - 24)
-    level_bonus = min(4, max(0, JusteLevel - EnemyLevel) // 10)
-    threshold = min(65536, 4096 + equipment_luck * 98 + level_bonus * 655)
-    critical = (original_RNG() & 0xFFFF) < threshold
+EQUIPMENT_LCK = max(0, LCK_ATTR - JusteLevel - 24).
+Primary threshold = min(65536, 4096 + bonus_units).
+No enemy-level bonus. No Lucky Charm/Ring hardcoded effects.
+Platinum Tip: on a failed primary roll, attack ID 2..5 with flag 0x80
+gets the original conditional second roll (RNG & 0xF003) == 0.
 
-The vanilla Lucky Charm/Ring threshold bonuses and the Platinum Tip second
-roll are bypassed. The vanilla caller still doubles critical damage.
-
-The embedded 152-byte ARM7TDMI THUMB stub was assembled with clang targeting
-armv4t-none-eabi. It expects the enemy instance pointer in r0. At the known
-caller 0x080312CE, r9 holds this pointer, so its original 'mov r0,r7' is
-replaced by 'mov r0,r9'. The original BL to 0x08077CAC is preserved.
-
-The original 105-coefficient build was tested in mGBA/GDB. This 98-coefficient revision requires new dynamic verification.
+New stub is 132 bytes at ROM offset 0x7FFD00 (GBA 0x087FFD00).
+The old ranges GDB breakpoints inside the stub are NOT compatible with
+this version because code offsets have changed. Rebuild/update that script.
 """
-
 from hashlib import sha1
 from pathlib import Path
 
+VERSION = "1.0.0"
+INPUT_ROM = "rom-harmony-usa.gba"
+OUTPUT_ROM = f"rom-harmony-usa-luckyJuste-critical-{VERSION}.gba"
 EXPECTED_SHA1 = "b90da0d9be0b3a0893cd9e2c399056bcf9579e21"
 ROM_SIZE = 0x800000
 CALLER_OFFSET = 0x0312CE
-CRITICAL_ENTRY_OFFSET = 0x077CAC
+ENTRY_OFFSET = 0x077CAC
 STUB_OFFSET = 0x7FFD00
+EXPECTED_CALLER = bytes.fromhex("38 1C")
+EXPECTED_ENTRY = bytes.fromhex("30 B5 00 04 05 0C 00 24")
+ENTRY_TRAMPOLINE = bytes.fromhex("00 4B 18 47") + (
+    (0x08000000 + STUB_OFFSET) | 1
+).to_bytes(4, "little")
 
-EXPECTED_CALLER = bytes.fromhex("38 1C")       # mov r0, r7
-PATCHED_CALLER = bytes.fromhex("48 46")        # mov r0, r9 (enemy instance)
-EXPECTED_CRITICAL_ENTRY = bytes.fromhex("30 B5 00 04 05 0C 00 24")
-
-# ARM7TDMI THUMB entry: ldr r3, [pc, #0]; bx r3; .word stub_thumb_address
-ENTRY_TRAMPOLINE = (bytes.fromhex("00 4B 18 47")
-                    + ((0x08000000 + STUB_OFFSET) | 1).to_bytes(4, "little"))
-
-# Standalone Thumb-1 routine, assembled for ARM7TDMI (no Thumb-2/BLX).
-# Literal pool contains addresses for Juste level, LCK, enemy DNA pointer,
-# 655, 4096, 65536, and vanilla RNG entry (Thumb bit set).
+# Thumb-1 bytes assembled for armv4t from critical-linear-stub.s.
 STUB = bytes.fromhex(
-    "f0b5041c1d4d2d781d4e3688761b183e00d50026201c3e30007824214843"
-    "194909684018007c2f1a00d500270023282f0bd21e2f07d2142f03d20a2f"
-    "06d3012304e0022302e0032300e00423622046430d484343f6180d483618"
-    "0d48864200d9061c0c4b7a460532964618470004000cb04201d3002000e0"
-    "0120f0bd7c87010258850102102b00038f0200000010000000000100790a0008"
+    'f0b5041c18480588184800782d1a183d00d5002566202e1c'
+    '464368083618144836181448864200d9061c134b7a460732'
+    '964618470004000cb04212d3a01e03280dd80e4800688021'
+    '084208d00a4b7a460532964618470a490840002801d00020'
+    'f0bd0120f0bd0000588501027c8701020010000000000100'
+    '790a00082885010203f00000'
 )
 
 
-def verify_range(data: bytearray, offset: int, expected: bytes, label: str) -> None:
-    actual = bytes(data[offset:offset + len(expected)])
-    if actual != expected:
-        raise ValueError(
-            f"{label}: incorrect bytes at ROM offset 0x{offset:X}: "
-            f"expected {expected.hex(' ')}, got {actual.hex(' ')}"
-        )
+def bonus_units(equipment_lck: int) -> int:
+    x = max(0, int(equipment_lck))
+    return 102 * x + (x >> 1)
+
+
+def threshold(lck_total: int, juste_level: int) -> int:
+    x = max(0, int(lck_total) - int(juste_level) - 24)
+    return min(65536, 4096 + bonus_units(x))
+
+
+def verify(rom: bytes, offset: int, expected: bytes, label: str) -> None:
+    if rom[offset:offset + len(expected)] != expected:
+        raise ValueError(f"{label}: unexpected bytes at 0x{offset:X}; use clean USA ROM")
 
 
 def apply_patch() -> Path:
-    source = Path(original_rom)
-    if not source.is_file():
-        raise FileNotFoundError(f"Missing input ROM: {source}")
-
-    rom = bytearray(source.read_bytes())
+    rom = bytearray(Path(INPUT_ROM).read_bytes())
     if len(rom) != ROM_SIZE:
-        raise ValueError(f"Expected 0x{ROM_SIZE:X} bytes; got 0x{len(rom):X}")
-    digest = sha1(rom).hexdigest()
-    if digest != EXPECTED_SHA1:
-        raise ValueError(
-            f"Expected CLEAN USA ROM SHA-1 {EXPECTED_SHA1}; got {digest}. "
-            "Do not run this script on an already patched ROM."
-        )
-
-    assert len(STUB) == 0x98, "Unexpected assembled THUMB stub size"
-    verify_range(rom, CALLER_OFFSET, EXPECTED_CALLER, "Damage caller")
-    verify_range(rom, CRITICAL_ENTRY_OFFSET, EXPECTED_CRITICAL_ENTRY,
-                 "Vanilla critical routine")
-    verify_range(rom, STUB_OFFSET, b"\xFF" * len(STUB), "Free ROM space")
-    if STUB_OFFSET + len(STUB) > len(rom):
-        raise ValueError("Stub extends beyond ROM")
-
-    rom[CALLER_OFFSET:CALLER_OFFSET + 2] = PATCHED_CALLER
-    rom[CRITICAL_ENTRY_OFFSET:CRITICAL_ENTRY_OFFSET + 8] = ENTRY_TRAMPOLINE
+        raise ValueError(f"Wrong ROM size: {len(rom)}")
+    if sha1(rom).hexdigest() != EXPECTED_SHA1:
+        raise ValueError("Wrong USA ROM SHA-1; use clean unmodified ROM")
+    verify(rom, CALLER_OFFSET, EXPECTED_CALLER, "Caller")
+    verify(rom, ENTRY_OFFSET, EXPECTED_ENTRY, "Critical entry")
+    verify(rom, STUB_OFFSET, b"\xff" * len(STUB), "Stub free space")
+    if STUB_OFFSET + len(STUB) > ROM_SIZE:
+        raise ValueError("Stub exceeds ROM")
+    # Caller remains vanilla: r0 receives attack ID for Platinum Tip gate.
+    rom[ENTRY_OFFSET:ENTRY_OFFSET + 8] = ENTRY_TRAMPOLINE
     rom[STUB_OFFSET:STUB_OFFSET + len(STUB)] = STUB
-
-    target = Path(patched_rom)
-    target.write_bytes(rom)
-    print(f"[OK] {target} ({len(rom)} bytes)")
-    print(f"[OK] Critical entry: 0x{0x08000000 + CRITICAL_ENTRY_OFFSET:08X}")
-    print(f"[OK] THUMB stub:    0x{0x08000000 + STUB_OFFSET:08X}, {len(STUB)} bytes")
-    print("[!] Experimental: verify in mGBA/GDB before distributing.")
-    return target
+    out = Path(OUTPUT_ROM)
+    out.write_bytes(rom)
+    print(f"[OK] {out}; stub {len(STUB)} bytes at 0x087FFD00")
+    for x in (0, 10, 20, 30, 40, 63):
+        t = 4096 + bonus_units(x)
+        print(f"  LCK equip {x:2d}: bonus {bonus_units(x):4d}, critical {t/65536*100:.5f}%")
+    print("[NOTE] Old ranges GDB script requires updated internal addresses.")
+    print("[NOTE] Test with mGBA/GDB before distribution.")
+    return out
 
 
 if __name__ == "__main__":

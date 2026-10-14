@@ -57,13 +57,13 @@ The patch does **not** modify the Rare Ghost routine.
 
 ### What does it change?
 
-`CRITICAL_CHANCE = 6.25 + EQUIPMENT_LUCKY*0,15 + LEVEL_BONUS`
+`CRITICAL_CHANCE = 6.25 + EQUIPMENT_LUCKY*(4,69/30) + LEVEL_BONUS`
 
 - The base chance is 4096/65536 = 6.25%, similar to the original game.
 - The luck of the equip increases the critical chance.
 - Each 10 level difference between Juste and its enemy adds 1% to the critical chance, up to a maximum of 4%.
 - Only one roll is performed. In the original game, if Juste equips "Platinum Tip" a second random roll of 1/64 = 1.56% is performed.
-- Why is the scaling factor 0.15? Because in the original game there is hidden behavior in how "Lucky Charm" and "Lucky Ring" increase critical chance. Through calculations, "Lucky Charm" which grants +10 luck and "Lucky Ring" which grants +20 luck achieve a hidden critical rate of 7168/65536 = 10.94% in the game. The 0.15 factor respects that hidden scaling but with the new system affects any item that grants luck.
+- Why is the scaling factor (4,69/30)=0.156333? Because in the original game there is hidden behavior in how "Lucky Charm" and "Lucky Ring" increase critical chance. Through calculations, "Lucky Charm" which grants +10 luck and "Lucky Ring" which grants +20 luck achieve a hidden critical rate of 7168/65536 = 10.94% (+4,69) in the game. The 0.156333 factor respects that hidden scaling but with the new system affects any item that grants luck.
 
 
 ## Credits
