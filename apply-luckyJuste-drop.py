@@ -1,6 +1,6 @@
 from pathlib import Path
 
-# Experimental luckyJuste drop patch. Apply ONLY to a clean USA ROM.
+# luckyJuste drop patch with equipment LCK ratio x0.50. Apply ONLY to a clean USA ROM.
 version = "1.0.0"
 original_rom = "rom-harmony-usa.gba"
 patched_rom = f"rom-harmony-usa-luckyJuste-drop-{version}.gba"
@@ -12,12 +12,12 @@ DROP1_STUB = 0x7FFF00
 STUB_SIZE = 0x48
 
 # Assembled for ARM7TDMI Thumb; first 0x30 bytes are code.
-# Logic: r6 += floor(3 * max(0, total_lck - level - 24) / 4).
+# Logic: r6 += floor(max(0, total_lck - level - 24) / 2).
 # Then call the original equipped-item check (0x080296DC), and jump
 # to the EXISTING equipped or unequipped branch, without rewriting it.
 CODE = bytes.fromhex(
     "0B 48 01 88 0B 48 00 78 09 1A 18 39 00 D5 00 21 "
-    "0A 00 03 32 92 08 89 1A 76 18 79 20 07 4A 96 46 "
+    "49 08 C0 46 C0 46 C0 46 76 18 79 20 07 4A 96 46 "
     "05 4B 18 47 00 28 01 D0 05 48 00 47 05 48 00 47"
 )
 assert len(CODE) == 0x30
@@ -74,7 +74,7 @@ def main():
         rom[hook:hook + 10] = entry(hook, offset)
     Path(patched_rom).write_bytes(rom)
     print(f"Created {patched_rom}")
-    print("Bonus = floor(3 * max(0, LCK_total - level - 24) / 4)")
+    print("Bonus = floor(max(0, LCK_total - level - 24) / 2)")
     print("Original equipped-item checks and item stats unchanged")
 
 

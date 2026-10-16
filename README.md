@@ -4,13 +4,13 @@ In the original *Castlevania: Harmony of Dissonance* (Game Boy Advance), LCK has
 
 **luckyJuste** fixes this by making LCK gained from equipment increase both normal and rare item drop rates, as well as critical hit chances. Only equipment bonuses count; LCK naturally gained through leveling is excluded.
 
-[Drop calculator](https://harmony-of-dissonance-drop.web.app/).
+[Drop calculator](https://harmony-of-dissonance-drop.web.app).
 
 ## How to apply
 
 There are two patches, you can use one of them or both.
 
-1. Get a clean USA ROM of *Castlevania: Harmony of Dissonance*.
+1. Get a USA ROM of *Castlevania: Harmony of Dissonance*.
 2. [Download luckyJuste-drop.ips](./luckyJuste-drop.ips).
 3. [Download luckyJuste-critical.ips](./luckyJuste-critical.ips).
 4. [Apply the IPS patch](https://www.romhacking.net/patch/).
@@ -28,22 +28,33 @@ File/ROM CRC32: 88C1B562
 
 In the original game, enemy drop rates use fixed values. The Rare Ring is handled as a special case, providing a hidden `+16` bonus to rare drops and `+32` to normal drops.
 
-With luckyJuste, **LCK gained from equipment increases both normal and rare item drop rates**.
-
 Juste's natural LCK from leveling is excluded:
 
 ```text
 EQUIPMENT_LUCKY = (LCK_ATTR - level - 24) * ratio
 ```
-ratio = `0.75`
+ratio = `0.5`
 
 The final drop check becomes:
 
 ```text
 RNG < BASE_DROP_RATE + EXTRA_DROP
 ```
+### Why is the multiplier set to 0.5?
 
-The game uses an RNG range of `0–1023`, so each point added to the drop threshold represents `1/1024` of the probability space. As in the original game, the rare item is checked first. If it drops, the normal item is not evaluated.
+For example, consider an item with a base drop threshold of 64, corresponding to a 6.25% drop chance.
+
+The game generates a random number between 0 and 1023. If the result is lower than 64, the item drops.
+
+With the Rare Ring equipped, the threshold increases to 96, raising the drop chance to 9.375% (+3.125 percentage points).
+
+The 0.5 multiplier was chosen to make equipment-based Luck meaningful while preserving the value of the Rare Ring.
+
+For example, 32 points of equipment Luck increase the threshold by 16, raising the drop chance from 6.25% to 7.8125%.
+
+This provides a balanced progression: equipment Luck improves drop rates without making the Rare Ring obsolete. Both bonuses also stack, rewarding players who invest in Luck-focused equipment.
+
+Only Luck gained from equipment contributes to this bonus; Juste's natural Luck is excluded.
 
 #### Rare Ring
 
@@ -57,12 +68,11 @@ The patch does **not** modify the Rare Ghost routine.
 
 ### What does it change?
 
-`CRITICAL_CHANCE = 6.25 + EQUIPMENT_LUCKY*(4,69/30) + LEVEL_BONUS`
+`CRITICAL_CHANCE = 6.25 + EQUIPMENT_LUCKY*(4,69/30)`
 
 - The base chance is 4096/65536 = 6.25%, similar to the original game.
+- As in the original game, if Juste has the Platinum Tip equipped and the first critical hit check fails, a second random roll is performed with a 1/64 (1.5625%) chance of landing a critical hit.
 - The luck of the equip increases the critical chance.
-- Each 10 level difference between Juste and its enemy adds 1% to the critical chance, up to a maximum of 4%.
-- Only one roll is performed. In the original game, if Juste equips "Platinum Tip" a second random roll of 1/64 = 1.56% is performed.
 - Why is the scaling factor (4,69/30)=0.156333? Because in the original game there is hidden behavior in how "Lucky Charm" and "Lucky Ring" increase critical chance. Through calculations, "Lucky Charm" which grants +10 luck and "Lucky Ring" which grants +20 luck achieve a hidden critical rate of 7168/65536 = 10.94% (+4,69) in the game. The 0.156333 factor respects that hidden scaling but with the new system affects any item that grants luck.
 
 
