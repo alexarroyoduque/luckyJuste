@@ -49,9 +49,9 @@ This **provides a balanced progression**: equipment Luck improves drop rates wit
 
 ### What does it change?
 - Juste's natural Luck from leveling is excluded:
-- `BASE_CHANGE = 4096/65536 = 6.25%` (similar to the original game)
+- `BASE_CHANCE = 4096/65536 = 6.25%` (similar to the original game)
 - `EQUIPMENT_LUCKY = (LCK_ATTR - nivel - 24)*(4,69/30)`
-- A random roll [0-65535] is compared against `BASE_CHANGE + EQUIPMENT_LUCKY`:
+- A random roll [0-65535] is compared against `BASE_CHANCE + EQUIPMENT_LUCKY`:
 - If the random roll is lower than this threshold, the hit is critical.
 - As in the original game, if Juste has the **Platinum Tip** equipped and the first critical hit check fails, a second random roll is performed with a **1/64 (1.5625%)** chance of landing a critical hit.
 
